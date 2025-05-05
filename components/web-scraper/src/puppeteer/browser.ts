@@ -1,0 +1,50 @@
+import puppeteer, { Browser } from "puppeteer"
+
+const EXTENSION_PATH = "extensions/webrtc"
+
+export async function get_browser(proxyIp: string) {
+	const path = process.platform === "darwin" ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" : "/usr/bin/chromium-browser"
+	const browser = await puppeteer.launch({
+		executablePath: path,
+		headless: true,
+		args: get_chrome_flags(proxyIp),
+		defaultViewport: {
+			width: 1920,
+			height: 1080,
+		}
+	})
+	return browser
+}
+
+export async function new_page(browser: Browser, username: string, password: string) {
+	const page = await browser.newPage()
+	await page.authenticate({ username, password })
+	return page
+}
+
+export function get_chrome_flags(proxyIp: string) {
+	return [
+		`--disable-extensions-except=${EXTENSION_PATH}`,
+		`--load-extension=${EXTENSION_PATH}`,
+		"--force-webrtc-ip-handling-policy=disable_non_proxied_udp",
+		`--proxy-server=${proxyIp}`,
+		"--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36",
+		"--hide-scrollbars",
+		"--enable-webgl",
+		"--ignore-gpu-blacklist",
+		"--ignore-gpu-blocklist",
+		"--no-sandbox",
+		"--disable-setuid-sandbox",
+		"--enable-gpu-rasterization",
+		"--enable-features=VaapiVideoDecoder,Vulkan",
+		"--enable-zero-copy",
+		"--use-gl=angle",
+		"--no-first-run",
+		"--disable-background-networking",
+		"--disable-extensions",
+		"--disable-background-timer-throttling",
+		"--disable-renderer-backgrounding",
+		"--enable-accelerated-2d-canvas",
+		"--disable-default-apps"
+	]
+}

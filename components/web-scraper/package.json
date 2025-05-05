@@ -1,0 +1,25 @@
+{
+	"type": "module",
+	"scripts": {
+		"build": "tsc",
+		"start": "node dist/main.js",
+		"dev": "yarn build && yarn start",
+		"fetch-schema": "source ../../.env && pg-to-ts generate -c $DATABASE_URL -o src/db/schema.ts"
+	},
+	"dependencies": {
+		"@google-cloud/bigquery": "^7.9.1",
+		"dotenv": "^16.5.0",
+		"express": "^5.1.0",
+		"got": "^14.4.5",
+		"got-scraping": "^4.0.7",
+		"pg": "^8.15.6",
+		"puppeteer": "^23.11.1"
+	},
+	"devDependencies": {
+		"@types/express": "^5.0.1",
+		"@types/node": "^22.10.2",
+		"@types/pg": "^8.11.14",
+		"pg-to-ts": "^4.1.1",
+		"typescript": "^5.7.2"
+	}
+}
