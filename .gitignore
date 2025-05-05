@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+*.eggs/
+*.whl
+*.cover
+
+# Node
+node_modules/
+yarn.lock
+dist/
+
+# Environment
+.env
+.venv/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform
+.terraform.lock.hcl
+.terraform-version
