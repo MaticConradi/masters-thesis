@@ -8,6 +8,7 @@ export type Result = {
 }
 
 export type PaperMetadata = {
+	title: string
 	tasks: string[],
 	datasets: string[],
 	results: Result[],

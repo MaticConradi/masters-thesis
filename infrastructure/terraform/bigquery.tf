@@ -97,3 +97,15 @@ resource "google_bigquery_table" "articles" {
     }
   ])
 }
+
+resource "google_project_iam_member" "mc_magistrska_cloud_run_job_user" {
+	project    = var.project_id
+	role       = "roles/bigquery.admin"
+	member     = "serviceAccount:${google_service_account.cloud_run_sa.email}"
+}
+
+resource "google_project_iam_member" "mc_magistrska_cloud_run_job_user_project" {
+  project = var.project_id
+  role    = "roles/bigquery.jobUser"
+  member  = "serviceAccount:${google_service_account.cloud_run_sa.email}"
+}

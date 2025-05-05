@@ -155,7 +155,7 @@ async function processPapers(): Promise<number> {
 				}
 
 				// Get associated metadata
-				const metadata = await scrapeMetadata(page)
+				const metadata = await scrapeMetadata(page, title)
 
 				// Get the URL of the PDF
 				const url = await linkButton.getProperty("href").then(prop => prop.jsonValue())
@@ -200,7 +200,7 @@ async function uploadPDFToGCS(origin: string, url: string, metadata: PaperMetada
 	})
 }
 
-async function scrapeMetadata(page: Page): Promise<PaperMetadata> {
+async function scrapeMetadata(page: Page, title: string): Promise<PaperMetadata> {
 	const taskDiv = await page.$(".paper-tasks")
 	const datasetsDiv = await page.$(".paper-datasets")
 	const evaluationDiv = await page.$("#evaluation")
@@ -297,6 +297,7 @@ async function scrapeMetadata(page: Page): Promise<PaperMetadata> {
 	}
 
 	return {
+		title,
 		tasks: tasks ?? [],
 		datasets: datasets ?? [],
 		results: results ?? [],

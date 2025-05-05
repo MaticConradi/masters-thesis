@@ -7,7 +7,7 @@ resource "google_cloud_run_v2_service" "web_scraper_service" {
   deletion_protection = false
 
   template {
-    service_account = "${var.cloud_run_sa_email}@${var.project_id}.iam.gserviceaccount.com"
+    service_account = google_service_account.cloud_run_sa.email
     timeout         = "3600s"
 
     containers {
@@ -49,18 +49,4 @@ resource "google_cloud_run_v2_service" "web_scraper_service" {
     google_secret_manager_secret_iam_member.database_url_accessor,
     google_secret_manager_secret_iam_member.proxy_list_url_accessor,
   ]
-}
-
-resource "google_secret_manager_secret_iam_member" "database_url_accessor" {
-  project    = google_secret_manager_secret.database_url.project
-  secret_id  = google_secret_manager_secret.database_url.secret_id
-  role       = "roles/secretmanager.secretAccessor"
-  member     = "serviceAccount:${var.cloud_run_sa_email}@${var.project_id}.iam.gserviceaccount.com"
-}
-
-resource "google_secret_manager_secret_iam_member" "proxy_list_url_accessor" {
-  project    = google_secret_manager_secret.proxy_list_url.project
-  secret_id  = google_secret_manager_secret.proxy_list_url.secret_id
-  role       = "roles/secretmanager.secretAccessor"
-  member     = "serviceAccount:${var.cloud_run_sa_email}@${var.project_id}.iam.gserviceaccount.com"
 }
