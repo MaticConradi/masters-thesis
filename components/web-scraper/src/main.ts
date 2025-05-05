@@ -15,7 +15,7 @@ const storage = new Storage()
 const bucket = storage.bucket(process.env.ML_PAPERS_BUCKET_NAME!)
 
 function computeFileHash(origin: string): string {
-	return createHash("md5").update(origin).digest("base64url")
+	return `${createHash("md5").update(origin).digest("base64url")}.pdf`
 }
 
 /**
