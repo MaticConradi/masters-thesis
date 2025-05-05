@@ -1,7 +1,7 @@
-resource "google_artifact_registry_repository" "scraper" {
+resource "google_artifact_registry_repository" "web-scraper" {
   provider      = google
   location      = var.region
-  repository_id = "scraper"
+  repository_id = "web-scraper"
   description   = "Web scraper repository (masters thesis)"
   format        = "DOCKER"
 }
