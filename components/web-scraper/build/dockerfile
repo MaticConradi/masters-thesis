@@ -12,7 +12,8 @@ RUN yarn build
 FROM node:alpine AS runner
 WORKDIR /app
 
-RUN apk add --no-cache tini
+RUN apk add --no-cache tini chromium chromium-swiftshader xvfb ttf-freefont font-noto-emoji && rm -rf /var/cache/apk/* /tmp/*
+ENV DISPLAY=":1.0"
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules

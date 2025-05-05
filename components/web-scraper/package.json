@@ -13,7 +13,7 @@
 		"got": "^14.4.5",
 		"got-scraping": "^4.0.7",
 		"pg": "^8.15.6",
-		"puppeteer": "^23.11.1"
+		"puppeteer-core": "^24.8.0"
 	},
 	"devDependencies": {
 		"@types/express": "^5.0.1",

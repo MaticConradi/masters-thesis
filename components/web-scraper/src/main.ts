@@ -3,7 +3,7 @@ config()
 
 import express from "express"
 import { get_browser, new_page } from "./puppeteer/browser.js"
-import { Page } from "puppeteer"
+import { Page } from "puppeteer-core"
 import { readUrlsFromBigQuery } from "./bigquery/read.js"
 import { getRandomProxy } from "./utils/proxies.js"
 import { fetchPapersWithCodeTasks, updatePapersWithCodeTask } from "./db/queries/papers-with-code.js"

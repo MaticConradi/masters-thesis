@@ -1,4 +1,4 @@
-import puppeteer, { Browser } from "puppeteer"
+import puppeteer, { Browser } from "puppeteer-core"
 
 const EXTENSION_PATH = "extensions/webrtc"
 
