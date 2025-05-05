@@ -2,17 +2,16 @@ import { config } from "dotenv"
 config()
 
 import express from "express"
-import { get_browser, new_page } from "./puppeteer/browser.js"
 import { Page } from "puppeteer-core"
+import { get_browser, new_page } from "./puppeteer/browser.js"
 import { readUrlsFromBigQuery } from "./bigquery/read.js"
 import { getRandomProxy } from "./utils/proxies.js"
 import { fetchPapersWithCodeTasks, updatePapersWithCodeTask } from "./db/queries/papers-with-code.js"
-import { Result } from "./types.js"
+import { PaperMetadata, Result } from "./types.js"
+import { Storage } from "@google-cloud/storage"
 
-if (!process.env.PROXY_LIST_URL) {
-	console.error("PROXY_LIST_URL is not set")
-	process.exit(1)
-}
+const storage = new Storage()
+const bucket = storage.bucket(process.env.ML_PAPERS_BUCKET_NAME!)
 
 /**
  * Obtains an exhaustive list of tasks and subtasks from the SOTA page of Papers with Code.
@@ -93,11 +92,13 @@ async function scrapePapersWithCodeTasks() {
 /**
  * Scrapes the URLs of papers from the Papers with Code website and processes them.
  *
- * @returns {Promise<void>} A promise that resolves when the scraping is complete
+ * @returns {Promise<number>} The number of papers processed
  */
-async function processPapers() {
-	const existing = await readUrlsFromBigQuery()
+async function processPapers(): Promise<number> {
+	const start = Date.now()
+	let processedPaperCount = 0
 
+	const existing = await readUrlsFromBigQuery()
 	const tasks = await fetchPapersWithCodeTasks()
 
 	const proxy = await getRandomProxy()
@@ -124,6 +125,13 @@ async function processPapers() {
 
 			let foundNewPapers = false
 			for (const paperCard of paperCards) {
+				// Stop if the time limit of 55 minutes is reached
+				if (Date.now() - start > 1000 * 60 * 55) {
+					console.log("Time limit reached, stopping scraping")
+					await browser.close()
+					return processedPaperCount
+				}
+
 				const titleElement = await paperCard.$("h1 a")
 				if (!titleElement) {
 					continue
@@ -146,13 +154,14 @@ async function processPapers() {
 					continue
 				}
 
-				// Get the URL of the PDF
-				const url = await linkButton.getProperty("href").then(prop => prop.jsonValue())
-
-				// TODO: PROCESS PDF
-
 				// Get associated metadata
 				const metadata = await scrapeMetadata(page)
+
+				// Get the URL of the PDF
+				const url = await linkButton.getProperty("href").then(prop => prop.jsonValue())
+				uploadPDFToGCS(origin, url, metadata)
+
+				processedPaperCount += 1
 			}
 
 			if (!foundNewPapers) {
@@ -162,14 +171,36 @@ async function processPapers() {
 	}
 
 	await browser.close()
+
+	return processedPaperCount
 }
 
-async function scrapeMetadata(page: Page): Promise<{
-	tasks: string[],
-	datasets: string[],
-	results: Result[],
-	methods: string[]
-}> {
+async function uploadPDFToGCS(origin: string, url: string, metadata: PaperMetadata) {
+	const response = await fetch(url)
+	if (!response.ok) {
+		return
+	}
+
+	const buffer = await response.arrayBuffer()
+
+	const pdf = bucket.file(origin.split(".com/")[1])
+
+	await pdf.save(Buffer.from(buffer), {
+		contentType: 'application/pdf',
+		public: false,
+	})
+
+	await pdf.setMetadata({
+		metadata: {
+			tasks: JSON.stringify(metadata.tasks),
+			datasets: JSON.stringify(metadata.datasets),
+			methods: JSON.stringify(metadata.methods),
+			results: JSON.stringify(metadata.results)
+		}
+	})
+}
+
+async function scrapeMetadata(page: Page): Promise<PaperMetadata> {
 	const taskDiv = await page.$(".paper-tasks")
 	const datasetsDiv = await page.$(".paper-datasets")
 	const evaluationDiv = await page.$("#evaluation")
@@ -278,8 +309,8 @@ const app = express()
 app.get('/papers-with-code/update-tasks', async (req, res) => {
 	console.log("Received request for /papers-with-code/update-tasks")
 	try {
-		await scrapePapersWithCodeTasks()
-		res.send({ message: "Tasks updated" });
+		const count = await scrapePapersWithCodeTasks()
+		res.send({ message: "Tasks updated", count: count });
 	} catch (error) {
 		console.error("Error in /papers-with-code/update-tasks endpoint:", error);
 		res.status(500).send({ message: "Failed to update tasks", error: error });

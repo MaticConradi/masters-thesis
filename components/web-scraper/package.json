@@ -8,6 +8,7 @@
 	},
 	"dependencies": {
 		"@google-cloud/bigquery": "^7.9.1",
+		"@google-cloud/storage": "^7.16.0",
 		"dotenv": "^16.5.0",
 		"express": "^5.1.0",
 		"got": "^14.4.5",

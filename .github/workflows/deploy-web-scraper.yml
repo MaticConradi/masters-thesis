@@ -1,4 +1,4 @@
-name: Build Scraper Service and Deploy to Cloud Run
+name: Build Web Scraper Service and Deploy to Cloud Run
 
 on:
   push:
