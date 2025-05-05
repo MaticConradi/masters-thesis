@@ -179,16 +179,16 @@ async function scrapeMetadata(page: Page): Promise<{
 		Promise.all(
 			anchors
 				.map(a => a.getProperty("innerText")
-				.then(prop => prop.jsonValue())
-				.then(value => value.trim()))
+					.then(prop => prop.jsonValue())
+					.then(value => value.trim()))
 		).then(values => values.filter(value => !!value))
 	)
 	const datasets = await datasetsDiv?.$$("a").then(anchors =>
 		Promise.all(
 			anchors
 				.map(a => a.getProperty("innerText")
-				.then(prop => prop.jsonValue())
-				.then(value => value.trim()))
+					.then(prop => prop.jsonValue())
+					.then(value => value.trim()))
 		).then(values => values.filter(value => !!value && value !== "Add Datasets"))
 	)
 
@@ -196,8 +196,8 @@ async function scrapeMetadata(page: Page): Promise<{
 		Promise.all(
 			anchors
 				.map(a => a.getProperty("innerText")
-				.then(prop => prop.jsonValue())
-				.then(value => value.trim()))
+					.then(prop => prop.jsonValue())
+					.then(value => value.trim()))
 		).then(values => values.filter(value => !!value && value !== "relevant methods here"))
 	)
 

@@ -2,8 +2,8 @@
 resource "google_iam_workload_identity_pool" "github_pool" {
   provider                  = google
   project                   = var.project_id
-  workload_identity_pool_id = "github-actions-pool"
-  display_name              = "Github Actions Pool"
+  workload_identity_pool_id = "github-actions-identity-pool"
+  display_name              = "Github Identity Pool"
   description               = "Workload Identity Pool for Github Actions"
 }
 
@@ -12,16 +12,16 @@ resource "google_iam_workload_identity_pool_provider" "github_provider" {
   provider                           = google
   project                            = var.project_id
   workload_identity_pool_id          = google_iam_workload_identity_pool.github_pool.workload_identity_pool_id
-  workload_identity_pool_provider_id = "github-actions-provider"
-  display_name                       = "Github Actions Provider"
+  workload_identity_pool_provider_id = "github-identity-provider"
+  display_name                       = "Github Identity Provider"
   description                        = "Workload Identity Provider for Github Actions"
 
   attribute_mapping = {
     "google.subject"             = "assertion.sub"
     "attribute.aud"              = "assertion.aud"
     "attribute.actor"            = "assertion.actor"
-    "attribute.repository"       = "assertion.repository",
-    "attribute.repository_owner" = "assertion.repository_owner",
+    "attribute.repository"       = "assertion.repository"
+    "attribute.repository_owner" = "assertion.repository_owner"
   }
 
   attribute_condition = "assertion.repository_owner == 'MaticConradi'"
@@ -58,12 +58,12 @@ resource "google_project_iam_member" "service_account_user" {
   member   = "serviceAccount:${google_service_account.github_actions_sa.email}"
 }
 
-# Allow SA to read from Artifact Registry
-resource "google_project_iam_member" "artifact_registry_reader" {
-  provider = google
-  project  = var.project_id
-  role     = "roles/artifactregistry.reader"
-  member   = "serviceAccount:${google_service_account.github_actions_sa.email}"
+# Allow SA to read/write/delete from Artifact Registry
+resource "google_project_iam_member" "artifact_registry_admin" {
+	provider = google
+	project  = var.project_id
+	role     = "roles/artifactregistry.admin"
+	member   = "serviceAccount:${google_service_account.github_actions_sa.email}"
 }
 
 # 5. IAM Policy Binding for Workload Identity User Role
