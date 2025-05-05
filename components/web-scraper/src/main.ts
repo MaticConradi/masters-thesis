@@ -4,7 +4,6 @@ config()
 import express from "express"
 import { Page } from "puppeteer-core"
 import { get_browser, new_page } from "./puppeteer/browser.js"
-import { readUrlsFromBigQuery } from "./bigquery/read.js"
 import { getRandomProxy } from "./utils/proxies.js"
 import { fetchPapersWithCodeTasks, updatePapersWithCodeTask } from "./db/queries/papers-with-code.js"
 import { PaperMetadata, Result } from "./types.js"
@@ -103,7 +102,6 @@ async function processPapers(): Promise<number> {
 	const start = Date.now()
 	let processedPaperCount = 0
 
-	const existing = await readUrlsFromBigQuery()
 	const tasks = await fetchPapersWithCodeTasks()
 
 	const proxy = await getRandomProxy()
@@ -148,13 +146,13 @@ async function processPapers(): Promise<number> {
 				const origin = await titleElement.getProperty("href").then(prop => prop.jsonValue())
 				const title = await titleElement.getProperty("innerText").then(prop => prop.jsonValue())
 
-				if (existing.some(entry => entry.origin === origin) || processedPapers.includes(origin)) {
+				if (processedPapers.includes(origin)) {
 					console.log(`Paper ${origin} already processed, skipping`)
 					continue
 				}
 
 				const filename = computeFileHash(origin)
-				const exists = await bucket.file(filename).exists()
+				const [exists] = await bucket.file(filename).exists()
 				if (exists) {
 					console.log(`File ${filename} already exists, skipping`)
 					continue
