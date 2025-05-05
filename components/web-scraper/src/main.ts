@@ -9,9 +9,14 @@ import { getRandomProxy } from "./utils/proxies.js"
 import { fetchPapersWithCodeTasks, updatePapersWithCodeTask } from "./db/queries/papers-with-code.js"
 import { PaperMetadata, Result } from "./types.js"
 import { Storage } from "@google-cloud/storage"
+import { createHash } from "crypto"
 
 const storage = new Storage()
 const bucket = storage.bucket(process.env.ML_PAPERS_BUCKET_NAME!)
+
+function computeFileHash(origin: string): string {
+	return createHash("md5").update(origin).digest("base64url")
+}
 
 /**
  * Obtains an exhaustive list of tasks and subtasks from the SOTA page of Papers with Code.
@@ -145,6 +150,12 @@ async function processPapers(): Promise<number> {
 					continue
 				}
 
+				const filename = computeFileHash(origin)
+				const exists = await bucket.file(filename).exists()
+				if (exists) {
+					continue
+				}
+
 				processedPapers.push(origin)
 				foundNewPapers = true
 				await page.goto(origin, { waitUntil: "domcontentloaded" })
@@ -155,11 +166,13 @@ async function processPapers(): Promise<number> {
 				}
 
 				// Get associated metadata
-				const metadata = await scrapeMetadata(page, title)
+				const metadata = await scrapeMetadata(page, origin, title)
 
 				// Get the URL of the PDF
 				const url = await linkButton.getProperty("href").then(prop => prop.jsonValue())
-				uploadPDFToGCS(origin, url, metadata)
+
+				// Asynchronously upload the PDF to GCS
+				uploadPDFToGCS(filename, url, metadata)
 
 				processedPaperCount += 1
 			}
@@ -175,7 +188,7 @@ async function processPapers(): Promise<number> {
 	return processedPaperCount
 }
 
-async function uploadPDFToGCS(origin: string, url: string, metadata: PaperMetadata) {
+async function uploadPDFToGCS(filename: string, url: string, metadata: PaperMetadata) {
 	const response = await fetch(url)
 	if (!response.ok) {
 		return
@@ -183,14 +196,12 @@ async function uploadPDFToGCS(origin: string, url: string, metadata: PaperMetada
 
 	const buffer = await response.arrayBuffer()
 
-	const pdf = bucket.file(origin.split(".com/")[1])
-
-	await pdf.save(Buffer.from(buffer), {
+	const file = bucket.file(filename)
+	await file.save(Buffer.from(buffer), {
 		contentType: 'application/pdf',
 		public: false,
 	})
-
-	await pdf.setMetadata({
+	await file.setMetadata({
 		metadata: {
 			tasks: JSON.stringify(metadata.tasks),
 			datasets: JSON.stringify(metadata.datasets),
@@ -200,7 +211,7 @@ async function uploadPDFToGCS(origin: string, url: string, metadata: PaperMetada
 	})
 }
 
-async function scrapeMetadata(page: Page, title: string): Promise<PaperMetadata> {
+async function scrapeMetadata(page: Page, origin: string, title: string): Promise<PaperMetadata> {
 	const taskDiv = await page.$(".paper-tasks")
 	const datasetsDiv = await page.$(".paper-datasets")
 	const evaluationDiv = await page.$("#evaluation")
@@ -298,6 +309,7 @@ async function scrapeMetadata(page: Page, title: string): Promise<PaperMetadata>
 
 	return {
 		title,
+		origin,
 		tasks: tasks ?? [],
 		datasets: datasets ?? [],
 		results: results ?? [],
