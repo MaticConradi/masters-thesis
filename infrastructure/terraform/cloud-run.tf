@@ -14,7 +14,7 @@ resource "google_cloud_run_v2_service" "web_scraper_service" {
       image = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.web_scraper.repository_id}/production:latest"
       resources {
         limits = {
-          memory = "1Gi"
+          memory = "2Gi"
           cpu    = "1"
         }
       }

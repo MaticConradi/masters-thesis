@@ -125,6 +125,7 @@ async function processPapers(): Promise<number> {
 
 			const paperCards = await page.$$(".infinite-item.paper-card")
 			if (paperCards.length === 0) {
+				console.log(`No paper cards found on page ${j} of ${url}`)
 				break
 			}
 
@@ -139,6 +140,7 @@ async function processPapers(): Promise<number> {
 
 				const titleElement = await paperCard.$("h1 a")
 				if (!titleElement) {
+					console.log("No title element found, skipping paper")
 					continue
 				}
 
@@ -147,12 +149,14 @@ async function processPapers(): Promise<number> {
 				const title = await titleElement.getProperty("innerText").then(prop => prop.jsonValue())
 
 				if (existing.some(entry => entry.origin === origin) || processedPapers.includes(origin)) {
+					console.log(`Paper ${origin} already processed, skipping`)
 					continue
 				}
 
 				const filename = computeFileHash(origin)
 				const exists = await bucket.file(filename).exists()
 				if (exists) {
+					console.log(`File ${filename} already exists, skipping`)
 					continue
 				}
 
@@ -162,6 +166,7 @@ async function processPapers(): Promise<number> {
 
 				const linkButton = await page.$("a.badge.badge-light")
 				if (!linkButton) {
+					console.log("No link button found, skipping paper")
 					continue
 				}
 
@@ -178,6 +183,7 @@ async function processPapers(): Promise<number> {
 			}
 
 			if (!foundNewPapers) {
+				console.log(`No new papers found on page ${j} of ${url}`)
 				break
 			}
 		}
