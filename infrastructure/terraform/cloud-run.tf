@@ -96,44 +96,43 @@ resource "google_cloud_run_v2_service" "web_scraper_service" {
   ]
 }
 
-# resource "google_cloud_run_v2_service" "pdf_processor_service" {
-#   provider = google
-#   name     = "pdf-processor"
-#   location = var.region
-#   project  = var.project_id
+resource "google_cloud_run_v2_service" "pdf_processor_service" {
+  provider = google
+  name     = "pdf-processor"
+  location = var.region
+  project  = var.project_id
 
-#   deletion_protection = false
+  deletion_protection = false
 
-#   template {
-#     service_account                  = google_service_account.cloud_run_sa.email
-#     timeout                          = "3600s"
-#     execution_environment            = "EXECUTION_ENVIRONMENT_GEN2"
-#     max_instance_request_concurrency = 1
+  template {
+    service_account                  = google_service_account.cloud_run_sa.email
+    timeout                          = "3600s"
+    execution_environment            = "EXECUTION_ENVIRONMENT_GEN2"
+    max_instance_request_concurrency = 1
 
-#     scaling {
-#       max_instance_count = 1
-#       min_instance_count = 0
-#     }
+    scaling {
+      max_instance_count = 1
+      min_instance_count = 0
+    }
 
-#     containers {
-#       image = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.pdf_processor.repository_id}/production:latest"
-#       resources {
-#         limits = {
-#           memory           = "16Gi"
-#           cpu              = "4"
-#           "nvidia.com/gpu" = "1"
-#         }
-#         cpu_idle          = false
-#         startup_cpu_boost = true
-#       }
+    containers {
+      image = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.pdf_processor.repository_id}/production:latest"
+      resources {
+        limits = {
+          memory           = "16Gi"
+          cpu              = "4"
+          "nvidia.com/gpu" = "1"
+        }
+        cpu_idle          = false
+      }
 
-#       env {
-#         name  = "ML_PAPERS_BUCKET_NAME"
-#         value = google_storage_bucket.ml_papers.name
-#       }
-#     }
-#   }
-# }
+      env {
+        name  = "ML_PAPERS_BUCKET_NAME"
+        value = google_storage_bucket.ml_papers.name
+      }
+    }
+  }
+}
 
 resource "google_project_iam_member" "cloud_run_sa_job_admin" {
 	project = var.project_id

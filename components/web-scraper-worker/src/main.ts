@@ -165,8 +165,8 @@ async function scrapePapersWithCodePapers(): Promise<number> {
 			}
 
 			for (const { origin, title } of papers) {
-				// Stop if the time limit of 55 minutes is reached
-				if (Date.now() - start > 1000 * 60 * 55) {
+				// Stop if the time limit of 23 hours and 55 minutes is reached
+				if (Date.now() - start > 86100 * 1000) {
 					console.log("Time limit reached, stopping scraping")
 					await browser.close()
 					return processedPaperCount
