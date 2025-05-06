@@ -204,10 +204,12 @@ async function uploadPDFToGCS(filename: string, url: string, metadata: PaperMeta
 		contentType: 'application/pdf',
 		public: false,
 		metadata: {
-			tasks: JSON.stringify(metadata.tasks),
-			datasets: JSON.stringify(metadata.datasets),
-			methods: JSON.stringify(metadata.methods),
-			results: JSON.stringify(metadata.results)
+			metadata: {
+				tasks: JSON.stringify(metadata.tasks),
+				datasets: JSON.stringify(metadata.datasets),
+				methods: JSON.stringify(metadata.methods),
+				results: JSON.stringify(metadata.results)
+			}
 		}
 	})
 }
