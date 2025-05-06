@@ -54,45 +54,45 @@ resource "google_cloud_run_v2_job" "web_scraper_worker" {
   ]
 }
 
-# resource "google_cloud_run_v2_job" "markdown_processor" {
-#   provider = google
-#   name     = "markdown-processor"
-#   location = var.region
-#   project  = var.project_id
+resource "google_cloud_run_v2_job" "markdown_processor" {
+  provider = google
+  name     = "markdown-processor"
+  location = var.region
+  project  = var.project_id
 
-#   deletion_protection = false
+  deletion_protection = false
 
-#   template {
-#     template {
-#       service_account       = google_service_account.cloud_run_sa.email
-#       timeout               = "86400s"
-#       execution_environment = "EXECUTION_ENVIRONMENT_GEN2"
+  template {
+    template {
+      service_account       = google_service_account.cloud_run_sa.email
+      timeout               = "86400s"
+      execution_environment = "EXECUTION_ENVIRONMENT_GEN2"
 
-#       containers {
-#         image = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.markdown_processor.repository_id}/production:latest"
+      containers {
+        image = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.markdown_processor.repository_id}/production:latest"
 
-#         env {
-#           name = "GEMINI_API_KEY"
-#           value_source {
-#             secret_key_ref {
-#               secret  = google_secret_manager_secret.gemini_api_key.secret_id
-#               version = "latest"
-#             }
-#           }
-#         }
-#         env {
-#           name  = "ML_PAPERS_BUCKET_NAME"
-#           value = google_storage_bucket.ml_papers.name
-#         }
-#       }
-#     }
-#   }
+        env {
+          name = "GEMINI_API_KEY"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.gemini_api_key.secret_id
+              version = "latest"
+            }
+          }
+        }
+        env {
+          name  = "ML_PAPERS_BUCKET_NAME"
+          value = google_storage_bucket.ml_papers.name
+        }
+      }
+    }
+  }
 
-#   depends_on = [
-#     google_secret_manager_secret_iam_member.database_url_accessor,
-#     google_secret_manager_secret_iam_member.proxy_list_url_accessor,
-#   ]
-# }
+  depends_on = [
+    google_secret_manager_secret_iam_member.database_url_accessor,
+    google_secret_manager_secret_iam_member.proxy_list_url_accessor,
+  ]
+}
 
 resource "google_cloud_run_v2_service" "web_scraper_service" {
   provider = google
@@ -150,6 +150,7 @@ resource "google_cloud_run_v2_service" "pdf_processor_service" {
     timeout                          = "3600s"
     execution_environment            = "EXECUTION_ENVIRONMENT_GEN2"
     max_instance_request_concurrency = 1
+    gpu_zonal_redundancy_disabled    = true
 
     scaling {
       max_instance_count = 1
@@ -171,6 +172,10 @@ resource "google_cloud_run_v2_service" "pdf_processor_service" {
         name  = "ML_PAPERS_BUCKET_NAME"
         value = google_storage_bucket.ml_papers.name
       }
+    }
+
+	node_selector {
+      accelerator = "nvidia-l4"
     }
   }
 }
