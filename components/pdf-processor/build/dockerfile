@@ -6,4 +6,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ./src ./src
 
-ENTRYPOINT [ "gunicorn", "--bind", ":$PORT", "--workers", "1", "--timeout", "0", "src.main:app" ]
+ENV PORT 8080
+EXPOSE $PORT
+
+ENTRYPOINT [ "sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 1 --timeout 0 src.main:app" ]
