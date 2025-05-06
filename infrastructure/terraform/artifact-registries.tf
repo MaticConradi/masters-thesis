@@ -18,6 +18,14 @@ resource "google_artifact_registry_repository" "pdf_processor" {
   provider      = google
   location      = var.region
   repository_id = "pdf-processor"
-  description   = "PDF processor repository (masters thesis)"
+  description   = "PDF Processor repository (masters thesis)"
+  format        = "DOCKER"
+}
+
+resource "google_artifact_registry_repository" "markdown_processor" {
+  provider      = google
+  location      = var.region
+  repository_id = "markdown-processor"
+  description   = "Markdown Processor repository (masters thesis)"
   format        = "DOCKER"
 }

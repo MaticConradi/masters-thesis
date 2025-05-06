@@ -338,6 +338,7 @@ async function scrapeMetadata(page: Page, origin: string, title: string): Promis
 		methods: methods ?? []
 	}
 }
+
 async function main() {
 	const args = process.argv.slice(2) // Skip 'node' and script path
 
@@ -370,9 +371,7 @@ async function main() {
 
 main()
 
-// Graceful shutdown
 process.on('SIGINT', async () => {
 	console.log('Shutting down...');
-	// Add any cleanup logic here if needed before exiting
 	process.exit(0);
 });

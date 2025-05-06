@@ -14,10 +14,11 @@ resource "google_cloud_run_v2_job" "web_scraper_worker" {
 
       containers {
         image = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.web_scraper_worker.repository_id}/production:latest"
+
         resources {
           limits = {
-            memory = "2Gi"
-            cpu    = "2"
+            memory = "4Gi"
+            cpu    = "1"
           }
         }
 
@@ -52,6 +53,46 @@ resource "google_cloud_run_v2_job" "web_scraper_worker" {
     google_secret_manager_secret_iam_member.proxy_list_url_accessor,
   ]
 }
+
+# resource "google_cloud_run_v2_job" "markdown_processor" {
+#   provider = google
+#   name     = "markdown-processor"
+#   location = var.region
+#   project  = var.project_id
+
+#   deletion_protection = false
+
+#   template {
+#     template {
+#       service_account       = google_service_account.cloud_run_sa.email
+#       timeout               = "86400s"
+#       execution_environment = "EXECUTION_ENVIRONMENT_GEN2"
+
+#       containers {
+#         image = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.markdown_processor.repository_id}/production:latest"
+
+#         env {
+#           name = "GEMINI_API_KEY"
+#           value_source {
+#             secret_key_ref {
+#               secret  = google_secret_manager_secret.gemini_api_key.secret_id
+#               version = "latest"
+#             }
+#           }
+#         }
+#         env {
+#           name  = "ML_PAPERS_BUCKET_NAME"
+#           value = google_storage_bucket.ml_papers.name
+#         }
+#       }
+#     }
+#   }
+
+#   depends_on = [
+#     google_secret_manager_secret_iam_member.database_url_accessor,
+#     google_secret_manager_secret_iam_member.proxy_list_url_accessor,
+#   ]
+# }
 
 resource "google_cloud_run_v2_service" "web_scraper_service" {
   provider = google
@@ -123,7 +164,7 @@ resource "google_cloud_run_v2_service" "pdf_processor_service" {
           cpu              = "4"
           "nvidia.com/gpu" = "1"
         }
-        cpu_idle          = false
+        cpu_idle = false
       }
 
       env {
@@ -135,7 +176,7 @@ resource "google_cloud_run_v2_service" "pdf_processor_service" {
 }
 
 resource "google_project_iam_member" "cloud_run_sa_job_admin" {
-	project = var.project_id
-	role    = "roles/run.admin"
-	member  = "serviceAccount:${google_service_account.cloud_run_sa.email}"
+  project = var.project_id
+  role    = "roles/run.admin"
+  member  = "serviceAccount:${google_service_account.cloud_run_sa.email}"
 }

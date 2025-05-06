@@ -51,7 +51,7 @@ def process_pdf_file(pdf_filename: str, start_time: int):
 	"""
 
 	if start_time < time() - 60 * 55:
-		return
+		raise KeyboardInterrupt("Processing time exceeded 55 minutes.")
 
 	temporaryDir = tempfile.mkdtemp()
 	try:
@@ -107,6 +107,7 @@ def process_pdfs_route():
 	"""
 	Flask route to trigger the PDF listing and processing.
 	"""
+
 	startTime = time()
 
 	try:
@@ -125,7 +126,9 @@ def process_pdfs_route():
 				process_pdf_file(filename, startTime)
 				processed_files.append(filename)
 				print(f"Finished processing for {filename}")
-			except Exception as e: # Catching exceptions here as well for overall status
+			except KeyboardInterrupt:
+				continue
+			except Exception as e:
 				print(f"An error occurred while processing {filename} in the route: {e}")
 				errors.append({"filename": filename, "error": str(e)})
 
