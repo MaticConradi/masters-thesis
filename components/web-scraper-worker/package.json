@@ -10,15 +10,13 @@
 		"@google-cloud/storage": "^7.16.0",
 		"dotenv": "^16.5.0",
 		"google-auth-library": "^9.15.1",
-		"got": "^14.4.5",
-		"got-scraping": "^4.0.7",
 		"pg": "^8.15.6",
-		"puppeteer-core": "^24.8.0"
+		"puppeteer-core": "^24.8.1"
 	},
 	"devDependencies": {
-		"@types/node": "^22.10.2",
-		"@types/pg": "^8.11.14",
+		"@types/node": "^22.15.12",
+		"@types/pg": "^8.12.0",
 		"pg-to-ts": "^4.1.1",
-		"typescript": "^5.7.2"
+		"typescript": "^5.8.3"
 	}
 }

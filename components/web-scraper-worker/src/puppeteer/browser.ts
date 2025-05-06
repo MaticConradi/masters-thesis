@@ -2,8 +2,8 @@ import puppeteer, { Browser } from "puppeteer-core"
 
 const EXTENSION_PATH = "extensions/webrtc"
 
-export async function get_browser(proxyIp: string) {
-	const path = process.platform === "darwin" ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" : "/usr/bin/chromium-browser"
+export async function getBrowser(proxyIp: string) {
+	const path = process.platform === "darwin" ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" : "/usr/bin/google-chrome-stable"
 	const browser = await puppeteer.launch({
 		executablePath: path,
 		headless: true,
@@ -16,8 +16,9 @@ export async function get_browser(proxyIp: string) {
 	return browser
 }
 
-export async function new_page(browser: Browser, username: string, password: string) {
+export async function newPage(browser: Browser, username: string, password: string) {
 	const page = await browser.newPage()
+	console.log("New page created")
 	await page.authenticate({ username, password })
 	return page
 }
@@ -29,22 +30,9 @@ export function get_chrome_flags(proxyIp: string) {
 		"--force-webrtc-ip-handling-policy=disable_non_proxied_udp",
 		`--proxy-server=${proxyIp}`,
 		"--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
-		"--hide-scrollbars",
-		"--enable-webgl",
-		"--ignore-gpu-blacklist",
-		"--ignore-gpu-blocklist",
 		"--no-sandbox",
 		"--disable-setuid-sandbox",
-		"--enable-gpu-rasterization",
-		"--enable-features=VaapiVideoDecoder,Vulkan",
-		"--enable-zero-copy",
-		"--use-gl=angle",
+		"--disabled-gpu",
 		"--no-first-run",
-		"--disable-background-networking",
-		"--disable-extensions",
-		"--disable-background-timer-throttling",
-		"--disable-renderer-backgrounding",
-		"--enable-accelerated-2d-canvas",
-		"--disable-default-apps"
 	]
 }

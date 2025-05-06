@@ -1,6 +1,15 @@
-# Build
-FROM node:alpine AS builder
+FROM node:slim AS builder
 WORKDIR /app
+
+RUN apt-get update && apt-get install tini gnupg wget -y && \
+    wget --quiet --output-document=- https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /etc/apt/trusted.gpg.d/google-archive.gpg && \
+    sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' && \
+    apt-get update && \
+    apt-get install google-chrome-stable -y --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN ls -alh /usr/bin/google-chrome-stable && \
+    /usr/bin/google-chrome-stable --version
 
 COPY ./package.json ./tsconfig.json ./
 RUN yarn install
@@ -8,18 +17,8 @@ RUN yarn install
 COPY ./src ./src
 RUN yarn build
 
-# Run
-FROM node:alpine AS runner
-WORKDIR /app
-
-RUN apk add --no-cache tini chromium chromium-swiftshader xvfb ttf-freefont font-noto-emoji && rm -rf /var/cache/apk/* /tmp/*
-ENV DISPLAY=":1.0"
-
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-
 COPY ./extensions ./extensions
 
 EXPOSE 3000
 
-ENTRYPOINT ["/sbin/tini", "--", "node", "dist/main.js"]
+ENTRYPOINT ["tini", "--", "node", "dist/main.js"]

@@ -2,7 +2,7 @@ import { config } from "dotenv"
 config()
 
 import { Page } from "puppeteer-core"
-import { get_browser, new_page } from "./puppeteer/browser.js"
+import { getBrowser, newPage } from "./puppeteer/browser.js"
 import { getRandomProxy } from "./utils/proxies.js"
 import { fetchPapersWithCodeTasks, updatePapersWithCodeTask } from "./db/queries/papers-with-code.js"
 import { PaperMetadata, Result } from "./types.js"
@@ -27,9 +27,9 @@ async function scrapePapersWithCodeTasks() {
 
 	const proxy = await getRandomProxy()
 	console.log(`Using proxy: ${proxy.ip}`)
-	const browser = await get_browser(proxy.ip)
+	const browser = await getBrowser(proxy.ip)
 	console.log("Chrome browser is ready")
-	const page = await new_page(browser, proxy.username, proxy.password)
+	const page = await newPage(browser, proxy.username, proxy.password)
 	await page.goto("https://paperswithcode.com/sota", { waitUntil: "domcontentloaded" })
 
 	console.log("Scraping SOTA page...")
@@ -119,9 +119,9 @@ async function scrapePapersWithCodePapers(): Promise<number> {
 
 	const proxy = await getRandomProxy()
 	console.log(`Using proxy: ${proxy.ip}`)
-	const browser = await get_browser(proxy.ip)
+	const browser = await getBrowser(proxy.ip)
 	console.log("Chrome browser is ready")
-	const page = await new_page(browser, proxy.username, proxy.password)
+	const page = await newPage(browser, proxy.username, proxy.password)
 
 	console.log(`Found ${tasks.size} ML tasks`)
 
