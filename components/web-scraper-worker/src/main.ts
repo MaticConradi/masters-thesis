@@ -115,9 +115,12 @@ async function scrapePapersWithCodePapers(): Promise<number> {
 	let processedPaperCount = 0
 
 	const tasks = await fetchPapersWithCodeTasks()
+	console.log(`Found ${tasks.size} existing tasks`)
 
 	const proxy = await getRandomProxy()
+	console.log(`Using proxy: ${proxy.ip}`)
 	const browser = await get_browser(proxy.ip)
+	console.log("Chrome browser is ready")
 	const page = await new_page(browser, proxy.username, proxy.password)
 
 	console.log(`Found ${tasks.size} ML tasks`)
