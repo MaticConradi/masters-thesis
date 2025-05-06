@@ -28,7 +28,7 @@ export function get_chrome_flags(proxyIp: string) {
 		`--load-extension=${EXTENSION_PATH}`,
 		"--force-webrtc-ip-handling-policy=disable_non_proxied_udp",
 		`--proxy-server=${proxyIp}`,
-		"--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36",
+		"--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
 		"--hide-scrollbars",
 		"--enable-webgl",
 		"--ignore-gpu-blacklist",

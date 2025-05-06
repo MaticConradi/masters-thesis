@@ -97,7 +97,7 @@ async function scrapePapersWithCodeTasks() {
  *
  * @returns {Promise<number>} The number of papers processed
  */
-async function processPapers(): Promise<number> {
+async function scrapePapersWithCodePapers(): Promise<number> {
 	const start = Date.now()
 	let processedPaperCount = 0
 
@@ -322,7 +322,7 @@ async function main() {
 	const args = process.argv.slice(2) // Skip 'node' and script path
 
 	if (args.length === 0) {
-		console.error("Please provide an argument: 'update-tasks' or 'process-papers'")
+		console.error("Please provide an argument: 'scrape-papers-with-code-tasks' or 'scrape-papers-with-code-papers'")
 		process.exit(1)
 	}
 
@@ -334,8 +334,8 @@ async function main() {
 			await scrapePapersWithCodeTasks()
 			console.log("Tasks updated successfully.")
 		} else if (command === 'scrape-papers-with-code-papers') {
-			console.log("Executing processPapers...")
-			const count = await processPapers()
+			console.log("Executing scrapePapersWithCodePapers...")
+			const count = await scrapePapersWithCodePapers()
 			console.log(`Papers processed: ${count}`)
 		} else {
 			console.error(`Unknown command: ${command}. Available commands: 'update-tasks', 'process-papers'`)

@@ -58,10 +58,10 @@ app.get('/papers-with-code/update-tasks', async (req, res) => {
 	console.log("Received request for /papers-with-code/update-tasks")
 	try {
 		const count = await scrapePapersWithCodeTasks()
-		res.send({ message: "Tasks updated", count: count });
+		res.send({ message: "Job started", count: count });
 	} catch (error) {
 		console.error("Error in /papers-with-code/update-tasks endpoint:", error);
-		res.status(500).send({ message: "Failed to update tasks", error: error });
+		res.status(500).send({ message: "Failed to start processing job", error: error });
 	}
 });
 
@@ -69,10 +69,10 @@ app.get('/papers-with-code/process-papers', async (req, res) => {
 	console.log("Received request for /papers-with-code/process-papers")
 	try {
 		await processPapers();
-		res.json({ message: "Papers processed" });
+		res.json({ message: "Job started" });
 	} catch (error) {
 		console.error("Error in /papers-with-code/process-papers endpoint:", error);
-		res.status(500).send({ message: "Failed to process papers", error: error });
+		res.status(500).send({ message: "Failed to start processing job", error: error });
 	}
 });
 
