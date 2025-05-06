@@ -6,4 +6,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ./src ./src
 
-ENTRYPOINT [ "python", "src/main.py" ]
+ENTRYPOINT [ "gunicorn", "--bind", ":$PORT", "--workers", "1", "--timeout", "0", "src.main:app" ]

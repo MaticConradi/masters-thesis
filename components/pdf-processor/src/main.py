@@ -2,11 +2,14 @@ from google.cloud import storage
 from os import path, getenv
 import subprocess
 import tempfile
-import shutil # Added for rmtree
+import shutil
+from flask import Flask, request, jsonify
 
 BUCKET_NAME = getenv("ML_PAPERS_BUCKET_NAME")
 storageClient = storage.Client()
 bucket = storageClient.bucket(BUCKET_NAME)
+
+app = Flask(__name__)
 
 def list_unprocessed_pdf_files():
 	"""
@@ -94,20 +97,46 @@ def process_pdf_file(pdf_filename: str):
 			print(f"Cleaning up temporary directory: {temporaryDir}")
 			shutil.rmtree(temporaryDir)
 
-def main():
+@app.route("/process", methods=['GET'])
+def process_pdfs_route():
 	"""
-	Main function to execute the PDF listing and processing.
+	Flask route to trigger the PDF listing and processing.
 	"""
-	unprocessedFiles = list_unprocessed_pdf_files()
-	if not unprocessedFiles:
-		print("No new PDF files to process.")
-		return
+	try:
+		unprocessedFiles = list_unprocessed_pdf_files()
+		if not unprocessedFiles:
+			print("No new PDF files to process.")
+			return jsonify({"message": "No new PDF files to process."}), 200
 
-	print(f"Found {len(unprocessedFiles)} PDF files to process: {unprocessedFiles}")
-	for filename in unprocessedFiles:
-		print(f"Starting processing for {filename}")
-		process_pdf_file(filename)
-		print(f"Finished processing for {filename}")
+		print(f"Found {len(unprocessedFiles)} PDF files to process: {unprocessedFiles}")
+		processed_files = []
+		errors = []
+		for filename in unprocessedFiles:
+			try:
+				print(f"Starting processing for {filename}")
+				process_pdf_file(filename) # This function now handles its own exceptions and prints errors
+				processed_files.append(filename)
+				print(f"Finished processing for {filename}")
+			except Exception as e: # Catching exceptions here as well for overall status
+				print(f"An error occurred while processing {filename} in the route: {e}")
+				errors.append({"filename": filename, "error": str(e)})
+
+		if errors:
+			return jsonify({
+				"message": "Completed processing with some errors.",
+				"processed_files": processed_files,
+				"errors": errors
+			}), 207 # Multi-Status
+
+		return jsonify({
+			"message": f"Successfully processed {len(processed_files)} files.",
+			"processed_files": processed_files
+		}), 200
+
+	except Exception as e:
+		print(f"An unexpected error occurred in /process route: {e}")
+		return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
 
 if __name__ == "__main__":
-	main()
+	port = int(getenv("PORT", 8080))
+	app.run(debug=True, host='0.0.0.0', port=port)

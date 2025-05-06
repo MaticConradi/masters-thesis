@@ -2,3 +2,5 @@ transformers==4.38.2
 albumentations==1.0.0
 nougat-ocr
 torch
+Flask
+gunicorn
