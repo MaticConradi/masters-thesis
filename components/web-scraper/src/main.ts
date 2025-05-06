@@ -128,14 +128,8 @@ async function processPapers(): Promise<number> {
 			}
 
 			let foundNewPapers = false
+			const papers: { origin: string, title: string }[] = []
 			for (const paperCard of paperCards) {
-				// Stop if the time limit of 55 minutes is reached
-				if (Date.now() - start > 1000 * 60 * 55) {
-					console.log("Time limit reached, stopping scraping")
-					await browser.close()
-					return processedPaperCount
-				}
-
 				const titleElement = await paperCard.$("h1 a")
 				if (!titleElement) {
 					console.log("No title element found, skipping paper")
@@ -151,6 +145,25 @@ async function processPapers(): Promise<number> {
 					continue
 				}
 
+				processedPapers.push(origin)
+				foundNewPapers = true
+
+				papers.push({ origin, title })
+			}
+
+			if (!foundNewPapers) {
+				console.log(`No new papers found on page ${j} of ${url}`)
+				break
+			}
+
+			for (const { origin, title } of papers) {
+				// Stop if the time limit of 55 minutes is reached
+				if (Date.now() - start > 1000 * 60 * 55) {
+					console.log("Time limit reached, stopping scraping")
+					await browser.close()
+					return processedPaperCount
+				}
+
 				const filename = computeFileHash(origin)
 				const [exists] = await bucket.file(filename).exists()
 				if (exists) {
@@ -158,8 +171,6 @@ async function processPapers(): Promise<number> {
 					continue
 				}
 
-				processedPapers.push(origin)
-				foundNewPapers = true
 				await page.goto(origin, { waitUntil: "domcontentloaded" })
 
 				const linkButton = await page.$("a.badge.badge-light")
@@ -168,21 +179,16 @@ async function processPapers(): Promise<number> {
 					continue
 				}
 
-				// Get associated metadata
-				const metadata = await scrapeMetadata(page, origin, title)
-
 				// Get the URL of the PDF
 				const url = await linkButton.getProperty("href").then(prop => prop.jsonValue())
+
+				// Get associated metadata
+				const metadata = await scrapeMetadata(page, origin, title)
 
 				// Asynchronously upload the PDF to GCS
 				uploadPDFToGCS(filename, url, metadata)
 
 				processedPaperCount += 1
-			}
-
-			if (!foundNewPapers) {
-				console.log(`No new papers found on page ${j} of ${url}`)
-				break
 			}
 		}
 	}

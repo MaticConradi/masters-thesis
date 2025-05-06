@@ -11,6 +11,7 @@
 		"@google-cloud/storage": "^7.16.0",
 		"dotenv": "^16.5.0",
 		"express": "^5.1.0",
+		"google-auth-library": "^9.15.1",
 		"got": "^14.4.5",
 		"got-scraping": "^4.0.7",
 		"pg": "^8.15.6",
