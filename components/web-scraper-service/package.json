@@ -1,0 +1,19 @@
+{
+	"type": "module",
+	"scripts": {
+		"build": "tsc",
+		"start": "node dist/main.js",
+		"dev": "yarn build && yarn start"
+	},
+	"dependencies": {
+		"@google-cloud/run": "^2.0.1",
+		"dotenv": "^16.5.0",
+		"express": "^5.1.0",
+		"google-auth-library": "^9.15.1"
+	},
+	"devDependencies": {
+		"@types/express": "^5.0.1",
+		"@types/node": "^22.10.2",
+		"typescript": "^5.7.2"
+	}
+}

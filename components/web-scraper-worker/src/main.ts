@@ -1,7 +1,6 @@
 import { config } from "dotenv"
 config()
 
-import express from "express"
 import { Page } from "puppeteer-core"
 import { get_browser, new_page } from "./puppeteer/browser.js"
 import { getRandomProxy } from "./utils/proxies.js"
@@ -319,38 +318,41 @@ async function scrapeMetadata(page: Page, origin: string, title: string): Promis
 		methods: methods ?? []
 	}
 }
+async function main() {
+	const args = process.argv.slice(2) // Skip 'node' and script path
 
-const app = express()
-
-app.get('/papers-with-code/update-tasks', async (req, res) => {
-	console.log("Received request for /papers-with-code/update-tasks")
-	try {
-		const count = await scrapePapersWithCodeTasks()
-		res.send({ message: "Tasks updated", count: count });
-	} catch (error) {
-		console.error("Error in /papers-with-code/update-tasks endpoint:", error);
-		res.status(500).send({ message: "Failed to update tasks", error: error });
+	if (args.length === 0) {
+		console.error("Please provide an argument: 'update-tasks' or 'process-papers'")
+		process.exit(1)
 	}
-});
 
-app.get('/papers-with-code/process-papers', async (req, res) => {
-	console.log("Received request for /papers-with-code/process-papers")
+	const command = args[0]
+
 	try {
-		await processPapers();
-		res.json({ message: "Papers processed" });
+		if (command === 'scrape-papers-with-code-tasks') {
+			console.log("Executing scrapePapersWithCodeTasks...")
+			await scrapePapersWithCodeTasks()
+			console.log("Tasks updated successfully.")
+		} else if (command === 'scrape-papers-with-code-papers') {
+			console.log("Executing processPapers...")
+			const count = await processPapers()
+			console.log(`Papers processed: ${count}`)
+		} else {
+			console.error(`Unknown command: ${command}. Available commands: 'update-tasks', 'process-papers'`)
+			process.exit(1)
+		}
+		process.exit(0)
 	} catch (error) {
-		console.error("Error in /papers-with-code/process-papers endpoint:", error);
-		res.status(500).send({ message: "Failed to process papers", error: error });
+		console.error(`Error executing command '${command}':`, error)
+		process.exit(1)
 	}
-});
+}
 
-const port = process.env.PORT || 3000
-app.listen(port, () => {
-	console.log(`Scraper server listening on port ${port}`);
-});
+main()
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-	console.log('Shutting down server...');
+	console.log('Shutting down...');
+	// Add any cleanup logic here if needed before exiting
 	process.exit(0);
 });

@@ -1,14 +1,14 @@
-name: Build Web Scraper Service and Deploy to Cloud Run
+name: Build Web Scraper Worker and Deploy to Cloud Run
 
 on:
   push:
     branches: [ "master" ]
     paths:
-      - 'components/web-scraper/**'
+      - 'components/web-scraper-worker/**'
 
 env:
   PROJECT_ID: personal-sandbox-403414
-  SERVICE: web-scraper
+  SERVICE: web-scraper-worker
   REGION: europe-west1
 
 jobs:
@@ -40,18 +40,10 @@ jobs:
 
       - name: Build Container
         run: |-
-          docker image build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}/production:${{ github.sha }} -f components/web-scraper/build/dockerfile components/web-scraper
+          docker image build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}/production:${{ github.sha }} -f components/web-scraper-worker/build/dockerfile components/web-scraper-worker
 
       - name: Push Container
         run: |-
           gcloud artifacts docker images delete ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}/production || :
           docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}/production:${{ github.sha }}
           gcloud artifacts docker tags add ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}/production:${{ github.sha }} ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}/production:latest
-
-      - name: Deploy to Cloud Run
-        id: deploy
-        uses: google-github-actions/deploy-cloudrun@v2
-        with:
-          service: ${{ env.SERVICE }}
-          region: ${{ env.REGION }}
-          image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}/production:${{ github.sha }}
