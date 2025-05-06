@@ -127,7 +127,6 @@ async function processPapers(): Promise<number> {
 				break
 			}
 
-			let foundNewPapers = false
 			const papers: { origin: string, title: string }[] = []
 			for (const paperCard of paperCards) {
 				const titleElement = await paperCard.$("h1 a")
@@ -146,14 +145,8 @@ async function processPapers(): Promise<number> {
 				}
 
 				processedPapers.push(origin)
-				foundNewPapers = true
 
 				papers.push({ origin, title })
-			}
-
-			if (!foundNewPapers) {
-				console.log(`No new papers found on page ${j} of ${url}`)
-				break
 			}
 
 			for (const { origin, title } of papers) {
