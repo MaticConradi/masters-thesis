@@ -23,11 +23,16 @@ function computeFileHash(origin: string): string {
  */
 async function scrapePapersWithCodeTasks() {
 	const tasks = await fetchPapersWithCodeTasks()
+	console.log(`Found ${tasks.size} existing tasks`)
 
 	const proxy = await getRandomProxy()
+	console.log(`Using proxy: ${proxy.ip}`)
 	const browser = await get_browser(proxy.ip)
+	console.log("Chrome browser is ready")
 	const page = await new_page(browser, proxy.username, proxy.password)
 	await page.goto("https://paperswithcode.com/sota", { waitUntil: "domcontentloaded" })
+
+	console.log("Scraping SOTA page...")
 
 	const areas = []
 	const taskCards = await page.$$(".sota-all-tasks")
@@ -39,6 +44,8 @@ async function scrapePapersWithCodeTasks() {
 
 		areas.push(url)
 	}
+
+	console.log(`Found ${areas.length} areas, scraping categories...`)
 
 	const categories = []
 	for (const url of areas) {
@@ -69,6 +76,8 @@ async function scrapePapersWithCodeTasks() {
 		}
 	}
 
+	console.log(`Found ${categories.length} categories, scraping tasks...`)
+
 	for (const url of categories) {
 		await page.goto(url, { waitUntil: "domcontentloaded" })
 
@@ -87,9 +96,13 @@ async function scrapePapersWithCodeTasks() {
 		}
 	}
 
+	console.log(`Found ${tasks.size} tasks, updating database...`)
+
 	for (const [url, count] of tasks.entries()) {
 		await updatePapersWithCodeTask(url, count)
 	}
+
+	await browser.close()
 }
 
 /**
@@ -338,7 +351,7 @@ async function main() {
 			const count = await scrapePapersWithCodePapers()
 			console.log(`Papers processed: ${count}`)
 		} else {
-			console.error(`Unknown command: ${command}. Available commands: 'update-tasks', 'process-papers'`)
+			console.error(`Unknown command: ${command}. Available commands: 'scrape-papers-with-code-tasks', 'scrape-papers-with-code-papers'`)
 			process.exit(1)
 		}
 		process.exit(0)
