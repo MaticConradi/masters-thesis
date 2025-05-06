@@ -204,8 +204,6 @@ async function uploadPDFToGCS(filename: string, url: string, metadata: PaperMeta
 	await file.save(Buffer.from(buffer), {
 		contentType: 'application/pdf',
 		public: false,
-	})
-	await file.setMetadata({
 		metadata: {
 			tasks: JSON.stringify(metadata.tasks),
 			datasets: JSON.stringify(metadata.datasets),

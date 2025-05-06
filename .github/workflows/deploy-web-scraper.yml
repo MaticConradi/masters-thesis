@@ -9,7 +9,7 @@ on:
 env:
   PROJECT_ID: personal-sandbox-403414
   SERVICE: web-scraper
-  REGION: europe-west4
+  REGION: europe-west1
 
 jobs:
   deploy:
