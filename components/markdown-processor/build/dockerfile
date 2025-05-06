@@ -17,6 +17,8 @@ RUN apk add --no-cache tini && rm -rf /var/cache/apk/* /tmp/*
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 
+RUN sed -i 's/let isDebugMode = !module.parent;/let isDebugMode = false;/' ./node_modules/pdf-parse/index.js
+
 EXPOSE 3000
 
 ENTRYPOINT ["/sbin/tini", "--", "node", "dist/main.js"]
