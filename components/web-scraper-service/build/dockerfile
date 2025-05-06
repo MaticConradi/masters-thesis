@@ -12,6 +12,8 @@ RUN yarn build
 FROM node:alpine AS runner
 WORKDIR /app
 
+RUN apk add --no-cache tini && rm -rf /var/cache/apk/* /tmp/*
+
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 
