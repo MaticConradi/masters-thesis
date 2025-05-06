@@ -207,26 +207,30 @@ async function scrapePapersWithCodePapers(): Promise<number> {
 }
 
 async function uploadPDFToGCS(filename: string, url: string, metadata: PaperMetadata) {
-	const response = await fetch(url)
-	if (!response.ok) {
-		return
-	}
-
-	const buffer = await response.arrayBuffer()
-
-	const file = bucket.file(filename)
-	await file.save(Buffer.from(buffer), {
-		contentType: 'application/pdf',
-		public: false,
-		metadata: {
-			metadata: {
-				tasks: JSON.stringify(metadata.tasks),
-				datasets: JSON.stringify(metadata.datasets),
-				methods: JSON.stringify(metadata.methods),
-				results: JSON.stringify(metadata.results)
-			}
+	try {
+		const response = await fetch(url)
+		if (!response.ok) {
+			return
 		}
-	})
+
+		const buffer = await response.arrayBuffer()
+
+		const file = bucket.file(filename)
+		await file.save(Buffer.from(buffer), {
+			contentType: 'application/pdf',
+			public: false,
+			metadata: {
+				metadata: {
+					tasks: JSON.stringify(metadata.tasks),
+					datasets: JSON.stringify(metadata.datasets),
+					methods: JSON.stringify(metadata.methods),
+					results: JSON.stringify(metadata.results)
+				}
+			}
+		})
+	} catch (error) {
+		console.error(`Error downloading or uploading file ${filename}:`, error)
+	}
 }
 
 async function scrapeMetadata(page: Page, origin: string, title: string): Promise<PaperMetadata> {
