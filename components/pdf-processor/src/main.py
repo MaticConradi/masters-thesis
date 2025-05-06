@@ -1,9 +1,10 @@
-from google.cloud import storage
+from time import time
 from os import path, getenv
 import subprocess
 import tempfile
 import shutil
 from flask import Flask, request, jsonify
+from google.cloud import storage
 
 BUCKET_NAME = getenv("ML_PAPERS_BUCKET_NAME")
 storageClient = storage.Client()
@@ -39,14 +40,18 @@ def list_unprocessed_pdf_files():
 
 	return result
 
-def process_pdf_file(pdf_filename: str):
+def process_pdf_file(pdf_filename: str, start_time: int):
 	"""
 	Downloads a PDF file from GCS, processes it with nougat,
 	and uploads the resulting .mmd file back to GCS.
 
 	Args:
 		pdf_filename (str): The name of the PDF file in GCS.
+		start_time (int): The start time for processing, used for logging.
 	"""
+
+	if start_time < time() - 60 * 55:
+		return
 
 	temporaryDir = tempfile.mkdtemp()
 	try:
@@ -102,7 +107,10 @@ def process_pdfs_route():
 	"""
 	Flask route to trigger the PDF listing and processing.
 	"""
+	startTime = time()
+
 	try:
+
 		unprocessedFiles = list_unprocessed_pdf_files()
 		if not unprocessedFiles:
 			print("No new PDF files to process.")
@@ -114,7 +122,7 @@ def process_pdfs_route():
 		for filename in unprocessedFiles:
 			try:
 				print(f"Starting processing for {filename}")
-				process_pdf_file(filename) # This function now handles its own exceptions and prints errors
+				process_pdf_file(filename, startTime)
 				processed_files.append(filename)
 				print(f"Finished processing for {filename}")
 			except Exception as e: # Catching exceptions here as well for overall status
