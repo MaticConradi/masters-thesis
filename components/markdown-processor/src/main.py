@@ -123,13 +123,10 @@ def main():
 	for pdf_filename in processedFiles:
 		try:
 			process_file(pdf_filename)
-			break
 		except KeyboardInterrupt:
 			break
 		except Exception as e:
 			print(f"Error processing {pdf_filename}: {e}")
-
-	shutil.rmtree(temporaryDir)
 
 if __name__ == "__main__":
 	main()
