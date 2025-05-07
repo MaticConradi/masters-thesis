@@ -12,6 +12,8 @@ bucket = storageClient.bucket(BUCKET_NAME)
 
 app = Flask(__name__)
 
+CHUNK_SIZE = 2
+
 def list_unprocessed_pdf_files():
 	"""
 	Lists PDF files in a GCS bucket that do not have a corresponding .mmd file.
@@ -40,7 +42,7 @@ def list_unprocessed_pdf_files():
 
 	return result
 
-def process_pdf_file(pdf_filename: str, start_time: int):
+def process_pdf_file(pdf_filenames, start_time):
 	"""
 	Downloads a PDF file from GCS, processes it with nougat,
 	and uploads the resulting .mmd file back to GCS.
@@ -53,54 +55,66 @@ def process_pdf_file(pdf_filename: str, start_time: int):
 	if start_time < time() - 60 * 55:
 		raise KeyboardInterrupt("Processing time exceeded 55 minutes")
 
+	if len(pdf_filenames) == 0:
+		return
+
 	temporaryDir = tempfile.mkdtemp()
 	try:
-		localPdfPath = path.join(temporaryDir, pdf_filename)
+		localPdfPaths = []
 
-		# Download PDF from GCS
-		print(f"Downloading {pdf_filename} to {localPdfPath}...")
-		blob = bucket.blob(pdf_filename)
-		blob.download_to_filename(localPdfPath)
-		print(f"Downloaded {pdf_filename}")
+		for pdfFilename in pdf_filenames:
+			localPdfPath = path.join(temporaryDir, pdfFilename)
+
+			# Download PDF from GCS
+			print(f"Downloading {pdfFilename} to {localPdfPath}...")
+			blob = bucket.blob(pdfFilename)
+			blob.download_to_filename(localPdfPath)
+			localPdfPaths.append(localPdfPath)
+			print(f"Downloaded {pdfFilename}")
 
 		# Run nougat command
 		# nougat expects the output directory to exist.
 		# The output filename will be the same as input but with .mmd
-		print(f"Processing {pdf_filename} with nougat...")
+		print(f"Processing {', '.join(pdf_filenames)} with nougat...")
 		# The nougat command will create a .mmd file in the temporaryDir
 		subprocess.run(
-			["nougat", localPdfPath, "-o", temporaryDir, "--no-skipping"],
+			["nougat", "-o", temporaryDir, "--no-skipping"] + localPdfPaths,
 			check=True, # Raises CalledProcessError if command returns non-zero exit code
 			capture_output=True # To capture stdout/stderr if needed
 		)
-		print(f"Finished processing {pdf_filename}")
+		print(f"Finished processing {len(pdf_filenames)} files")
 
-		# Upload the .mmd file
-		filename, _ = path.splitext(pdf_filename)
-		mmdFilename = f"{filename}.mmd"
-		localMmdPath = path.join(temporaryDir, mmdFilename)
+		for pdfFilename in pdf_filenames:
+			# Upload the .mmd file
+			filename, _ = path.splitext(pdfFilename)
+			mmdFilename = f"{filename}.mmd"
+			localMmdPath = path.join(temporaryDir, mmdFilename)
 
-		if path.exists(localMmdPath):
-			print(f"Uploading {mmdFilename} to GCS bucket {BUCKET_NAME}...")
-			mmdBlob = bucket.blob(mmdFilename)
-			mmdBlob.upload_from_filename(localMmdPath)
-			print(f"Uploaded {mmdFilename}")
-		else:
-			print(f"Error: Output file {localMmdPath} not found after nougat processing")
+			if path.exists(localMmdPath):
+				print(f"Uploading {mmdFilename} to GCS bucket {BUCKET_NAME}...")
+				mmdBlob = bucket.blob(mmdFilename)
+				mmdBlob.upload_from_filename(localMmdPath)
+				print(f"Uploaded {mmdFilename}")
+			else:
+				print(f"Error: Output file {localMmdPath} not found after nougat processing")
 
 	except subprocess.CalledProcessError as e:
-		print(f"Error processing {pdf_filename} with nougat: {e}")
+		print(f"Error processing {', '.join(pdf_filenames)} with nougat: {e}")
 		if e.stdout:
 			print(f"Nougat stdout: {e.stdout.decode()}")
 		if e.stderr:
 			print(f"Nougat stderr: {e.stderr.decode()}")
 	except Exception as e:
-		print(f"An error occurred while processing {pdf_filename}: {e}")
+		print(f"An error occurred while processing {', '.join(pdf_filenames)}: {e}")
 	finally:
 		# Clean up the temporary directory
 		if path.exists(temporaryDir):
 			print(f"Cleaning up temporary directory: {temporaryDir}")
 			shutil.rmtree(temporaryDir)
+
+def iterate_in_chunks(data, chunk_size):
+    for i in range(0, len(data), chunk_size):
+        yield data[i:i + chunk_size]
 
 @app.route("/process", methods=['GET'])
 def process_pdfs_route():
@@ -120,17 +134,17 @@ def process_pdfs_route():
 		print(f"Found {len(unprocessedFiles)} PDF files to process: {unprocessedFiles}")
 		processed_files = []
 		errors = []
-		for filename in unprocessedFiles:
+		for filenames in iterate_in_chunks(unprocessedFiles, CHUNK_SIZE):
 			try:
-				print(f"Starting processing for {filename}")
-				process_pdf_file(filename, startTime)
-				processed_files.append(filename)
-				print(f"Finished processing for {filename}")
+				print(f"Starting processing for {', '.join(filenames)}")
+				process_pdf_file(filenames, startTime)
+				processed_files.append(filenames)
+				print(f"Finished processing for {', '.join(filenames)}")
 			except KeyboardInterrupt:
 				break
 			except Exception as e:
-				print(f"An error occurred while processing {filename} in the route: {e}")
-				errors.append({"filename": filename, "error": str(e)})
+				print(f"An error occurred while processing {', '.join(filenames)} in the route: {e}")
+				errors.append({"filename": filenames, "error": str(e)})
 
 		if errors:
 			return jsonify({

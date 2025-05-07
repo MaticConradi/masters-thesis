@@ -64,6 +64,10 @@ def process_file(filename: str):
 		for page in pdfData.pages:
 			text += page.extract_text()
 
+		if text == "":
+			print("No text found in PDF. Skipping file.")
+			return
+
 		response = client.models.generate_content(
 			model='gemini-2.5-pro-preview-05-06',
 			contents=f"Inaccurate OCR text with markdown formatting:\n```{mmdContent}```\n\nExtracted unformatted text:\n```{text}```\n\nProvide a corrected version of the markdown text, ensuring that the formatting is preserved and the content is accurate. The output should be in markdown format. Respond with a single code block marked with ```.",
