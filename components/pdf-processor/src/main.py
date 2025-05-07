@@ -51,7 +51,7 @@ def process_pdf_file(pdf_filename: str, start_time: int):
 	"""
 
 	if start_time < time() - 60 * 55:
-		raise KeyboardInterrupt("Processing time exceeded 55 minutes.")
+		raise KeyboardInterrupt("Processing time exceeded 55 minutes")
 
 	temporaryDir = tempfile.mkdtemp()
 	try:
@@ -61,7 +61,7 @@ def process_pdf_file(pdf_filename: str, start_time: int):
 		print(f"Downloading {pdf_filename} to {localPdfPath}...")
 		blob = bucket.blob(pdf_filename)
 		blob.download_to_filename(localPdfPath)
-		print(f"Downloaded {pdf_filename}.")
+		print(f"Downloaded {pdf_filename}")
 
 		# Run nougat command
 		# nougat expects the output directory to exist.
@@ -73,7 +73,7 @@ def process_pdf_file(pdf_filename: str, start_time: int):
 			check=True, # Raises CalledProcessError if command returns non-zero exit code
 			capture_output=True # To capture stdout/stderr if needed
 		)
-		print(f"Finished processing {pdf_filename}.")
+		print(f"Finished processing {pdf_filename}")
 
 		# Upload the .mmd file
 		filename, _ = path.splitext(pdf_filename)
@@ -84,9 +84,9 @@ def process_pdf_file(pdf_filename: str, start_time: int):
 			print(f"Uploading {mmdFilename} to GCS bucket {BUCKET_NAME}...")
 			mmdBlob = bucket.blob(mmdFilename)
 			mmdBlob.upload_from_filename(localMmdPath)
-			print(f"Uploaded {mmdFilename}.")
+			print(f"Uploaded {mmdFilename}")
 		else:
-			print(f"Error: Output file {localMmdPath} not found after nougat processing.")
+			print(f"Error: Output file {localMmdPath} not found after nougat processing")
 
 	except subprocess.CalledProcessError as e:
 		print(f"Error processing {pdf_filename} with nougat: {e}")
@@ -127,7 +127,7 @@ def process_pdfs_route():
 				processed_files.append(filename)
 				print(f"Finished processing for {filename}")
 			except KeyboardInterrupt:
-				continue
+				break
 			except Exception as e:
 				print(f"An error occurred while processing {filename} in the route: {e}")
 				errors.append({"filename": filename, "error": str(e)})
