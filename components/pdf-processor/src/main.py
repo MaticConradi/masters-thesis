@@ -12,7 +12,7 @@ bucket = storageClient.bucket(BUCKET_NAME)
 
 app = Flask(__name__)
 
-CHUNK_SIZE = 2
+CHUNK_SIZE = 8
 
 def list_unprocessed_pdf_files():
 	"""
