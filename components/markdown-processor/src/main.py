@@ -12,8 +12,8 @@ storage = storage.Client()
 bucket = storage.bucket(BUCKET_NAME)
 
 bigquery = bigquery.Client()
-dataset = bigquery.dataset('mc_magistrska')
-table = dataset.table(name='articles')
+dataset = bigquery.dataset("mc_magistrska")
+table = dataset.table("articles")
 
 client = genai.Client(api_key=getenv("GEMINI_API_KEY"))
 
