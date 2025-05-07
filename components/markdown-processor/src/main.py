@@ -5,10 +5,15 @@ import shutil
 from PyPDF2 import PdfReader
 from google import genai
 from google.cloud import storage
+from google.cloud import bigquery
 
 BUCKET_NAME = getenv("ML_PAPERS_BUCKET_NAME")
-storageClient = storage.Client()
-bucket = storageClient.bucket(BUCKET_NAME)
+storage = storage.Client()
+bucket = storage.bucket(BUCKET_NAME)
+
+bigquery = bigquery.Client()
+dataset = bigquery.dataset('mc_magistrska')
+table = dataset.table(name='articles')
 
 client = genai.Client(api_key=getenv("GEMINI_API_KEY"))
 
@@ -24,15 +29,18 @@ def list_processed_pdf_files():
 
 	pdfFiles = set()
 	mmdFiles = set()
+	correctedMmdFiles = set()
 
 	for blob in blobs:
 		name, ext = path.splitext(blob.name)
 		if ext.lower() == ".pdf":
 			pdfFiles.add(name)
+		elif ext.lower() == ".mmd" and name.endswith("-corrected"):
+			correctedMmdFiles.add(name)
 		elif ext.lower() == ".mmd":
 			mmdFiles.add(name)
 
-	result = pdfFiles.intersection(mmdFiles)
+	result = pdfFiles.intersection(mmdFiles).difference(correctedMmdFiles)
 
 	return result
 
@@ -58,9 +66,45 @@ def process_file(filename: str):
 
 		response = client.models.generate_content(
 			model='gemini-2.5-pro-preview-05-06',
-			contents=f"Inaccurate OCR text with markdown formatting:\n```{mmdContent}```\n\nExtracted unformatted text:\n```{text}```\n\nProvide a corrected version of the markdown text, ensuring that the formatting is preserved and the content is accurate. The output should be in markdown format."
+			contents=f"Inaccurate OCR text with markdown formatting:\n```{mmdContent}```\n\nExtracted unformatted text:\n```{text}```\n\nProvide a corrected version of the markdown text, ensuring that the formatting is preserved and the content is accurate. The output should be in markdown format. Respond with a single code block marked with ```.",
 		)
-		print(response.text)
+		print("Received response from Gemini API.")
+
+		# Determine the start index of the content, after the first "```markdown" or "```"
+		firstMarkerMarkdownIndex = response.text.find("```markdown")
+		firstMarkerPlainIndex = response.text.find("```")
+
+		startIndex = -1
+		# Check if "```markdown" is present and is the first relevant marker
+		if firstMarkerMarkdownIndex != -1 and \
+		   (firstMarkerPlainIndex == -1 or firstMarkerMarkdownIndex <= firstMarkerPlainIndex):
+		    startIndex = firstMarkerMarkdownIndex + len("```markdown")
+		# Else, check if "```" is present and is the first relevant marker
+		elif firstMarkerPlainIndex != -1:
+		    startIndex = firstMarkerPlainIndex + len("```")
+		else:
+			raise ValueError("No valid start marker found in the response.")
+
+		# Determine the end index of the content, which is at the beginning of the last "```"
+		endIndex = response.text.rfind("```")
+
+		# Extract and strip if valid start and end positions are found
+		if startIndex != -1 and endIndex != -1 and endIndex >= startIndex:
+		    output = response.text[startIndex:endIndex].strip()
+		else:
+			raise ValueError("Invalid start or end index for content extraction.")
+
+		# Upload the corrected markdown content to GCS
+		print("Uploading corrected markdown content to GCS and BigQuery...")
+		correctedMmdFilename = f"{filename}-corrected.mmd"
+		correctedMmdBlob = bucket.blob(correctedMmdFilename)
+		correctedMmdBlob.upload_from_string(output, content_type="text/markdown")
+
+		# Insert the metadata into BigQuery
+		# bqRow = {
+		# }
+		# bigquery.insert_rows_json(table, [bqRow])
+		print(f"Uploaded corrected markdown file: {correctedMmdFilename}")
 
 	except Exception as e:
 		print(f"An error occurred while processing {filename}: {e}")
@@ -79,6 +123,7 @@ def main():
 	for pdf_filename in processedFiles:
 		try:
 			process_file(pdf_filename)
+			break
 		except KeyboardInterrupt:
 			break
 		except Exception as e:
