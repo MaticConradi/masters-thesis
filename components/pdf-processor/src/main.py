@@ -138,7 +138,7 @@ def process_pdfs_route():
 			try:
 				print(f"Starting processing for {', '.join(filenames)}")
 				process_pdf_file(filenames, startTime)
-				processed_files.append(filenames)
+				processed_files += filenames
 				print(f"Finished processing for {', '.join(filenames)}")
 			except KeyboardInterrupt:
 				break
