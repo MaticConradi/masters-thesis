@@ -188,7 +188,6 @@ async function scrapePapersWithCodePapers(task: string | undefined): Promise<num
 				const filename = computeFileHash(origin)
 				const [exists] = await bucket.file(filename).exists()
 				if (exists) {
-					console.log(`File ${filename} already exists, skipping`)
 					continue
 				}
 
