@@ -22,7 +22,7 @@ async function updateProxyList() {
 	}
 
 	const proxies = await response.text().then(text => {
-		return text.split("\n")
+		return text.trim().split("\n")
 			.map(line => {
 				const [ip, port, username, password] = line.trim().split(":")
 				return { ip: `${ip}:${port}`, username, password }
