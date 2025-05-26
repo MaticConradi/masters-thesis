@@ -3,11 +3,11 @@ config()
 
 import { Page } from "puppeteer-core"
 import { getBrowser, newPage } from "./puppeteer/browser.js"
-import { getRandomProxy } from "./utils/proxies.js"
 import { fetchPapersWithCodeTasks, updatePapersWithCodeTask } from "./db/queries/papers-with-code.js"
 import { PaperMetadata, Result } from "./types.js"
 import { Storage } from "@google-cloud/storage"
 import { createHash } from "crypto"
+import { getRandomProxy } from "./db/queries/proxies.js"
 
 const storage = new Storage()
 const bucket = storage.bucket(process.env.ML_PAPERS_BUCKET_NAME!)
@@ -26,6 +26,10 @@ async function scrapePapersWithCodeTasks() {
 	console.log(`Found ${tasks.size} existing tasks`)
 
 	const proxy = await getRandomProxy()
+	if (!proxy) {
+		throw new Error("No proxy available")
+	}
+
 	console.log(`Using proxy: ${proxy.ip}`)
 	const browser = await getBrowser(proxy.ip)
 	console.log("Chrome browser is ready")
@@ -119,6 +123,10 @@ async function scrapePapersWithCodePapers(task: string | undefined): Promise<num
 	console.log(`Found ${tasks.size} existing tasks`)
 
 	const proxy = await getRandomProxy()
+	if (!proxy) {
+		throw new Error("No proxy available")
+	}
+
 	console.log(`Using proxy: ${proxy.ip}`)
 	const browser = await getBrowser(proxy.ip)
 	console.log("Chrome browser is ready")

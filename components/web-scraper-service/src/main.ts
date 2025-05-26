@@ -12,7 +12,11 @@ const client = new JobsClient()
  * Update proxy list
  */
 async function updateProxyList() {
-	const response = await fetch(process.env.PROXY_LIST_URL!)
+	if (!process.env.PROXY_LIST_URL) {
+		throw new Error("PROXY_LIST_URL environment variable is not set");
+	}
+
+	const response = await fetch(process.env.PROXY_LIST_URL)
 	if (!response.ok) {
 		throw new Error("Failed to fetch proxies")
 	}
