@@ -3,6 +3,7 @@ config()
 
 import express from "express"
 import { JobsClient } from "@google-cloud/run";
+import { fetchPapersWithCodeTasks } from "./db/queries/papers-with-code.js";
 
 const client = new JobsClient()
 
@@ -35,21 +36,24 @@ async function scrapePapersWithCodeTasks() {
  * @returns {Promise<void>} A promise that resolves when the job has been submitted.
  */
 async function processPapers(): Promise<void> {
+	const tasks = await fetchPapersWithCodeTasks()
+
 	const name = `projects/${process.env.PROJECT_ID}/locations/${process.env.REGION}/jobs/${process.env.JOB_NAME}`;
 
-	const request = {
-		name,
-		overrides: {
-			containerOverrides: [
-				{
-					args: ['scrape-papers-with-code-papers'],
-				},
-			],
-			taskCount: 1
-		},
-	};
-
-	await client.runJob(request);
+	for (const url of tasks.keys()) {
+		const request = {
+			name,
+			overrides: {
+				containerOverrides: [
+					{
+						args: ['scrape-papers-with-code-papers', url],
+					},
+				],
+				taskCount: 1
+			},
+		};
+		await client.runJob(request);
+	}
 }
 
 const app = express()

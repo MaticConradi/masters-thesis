@@ -108,9 +108,10 @@ async function scrapePapersWithCodeTasks() {
 /**
  * Scrapes the URLs of papers from the Papers with Code website and processes them.
  *
+ * @param {string | undefined} task - The specific task to scrape papers for, or undefined to scrape all tasks
  * @returns {Promise<number>} The number of papers processed
  */
-async function scrapePapersWithCodePapers(): Promise<number> {
+async function scrapePapersWithCodePapers(task: string | undefined): Promise<number> {
 	const start = Date.now()
 	let processedPaperCount = 0
 
@@ -127,6 +128,11 @@ async function scrapePapersWithCodePapers(): Promise<number> {
 
 	let i = 1
 	for (const [url, count] of tasks.entries()) {
+		if (task && url !== task) {
+			i += 1
+			continue
+		}
+
 		const pages = Math.min(Math.ceil(count / 10), 20)
 		console.log(`${i++}/${tasks.size}: ${url} (${pages} pages)`)
 
@@ -351,12 +357,13 @@ async function main() {
 
 	try {
 		if (command === 'scrape-papers-with-code-tasks') {
-			console.log("Executing scrapePapersWithCodeTasks...")
+			console.log("Scraping Papers with Code tasks...")
 			await scrapePapersWithCodeTasks()
 			console.log("Tasks updated successfully.")
 		} else if (command === 'scrape-papers-with-code-papers') {
-			console.log("Executing scrapePapersWithCodePapers...")
-			const count = await scrapePapersWithCodePapers()
+			const task = args[1]
+			console.log(`Scraping Papers with Code papers for task: ${task || "all tasks"}`)
+			const count = await scrapePapersWithCodePapers(task)
 			console.log(`Papers processed: ${count}`)
 		} else {
 			console.error(`Unknown command: ${command}. Available commands: 'scrape-papers-with-code-tasks', 'scrape-papers-with-code-papers'`)

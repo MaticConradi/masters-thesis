@@ -3,17 +3,21 @@
 	"scripts": {
 		"build": "tsc",
 		"start": "node dist/main.js",
-		"dev": "yarn build && yarn start"
+		"dev": "yarn build && yarn start",
+		"fetch-schema": "source ../../.env && pg-to-ts generate -c $DATABASE_URL -o src/db/schema.ts"
 	},
 	"dependencies": {
 		"@google-cloud/run": "^2.0.1",
 		"dotenv": "^16.5.0",
 		"express": "^5.1.0",
-		"google-auth-library": "^9.15.1"
+		"google-auth-library": "^9.15.1",
+		"pg": "^8.16.0"
 	},
 	"devDependencies": {
 		"@types/express": "^5.0.1",
 		"@types/node": "^22.10.2",
+		"@types/pg": "^8.15.2",
+		"pg-to-ts": "^4.1.1",
 		"typescript": "^5.7.2"
 	}
 }
