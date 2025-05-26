@@ -75,8 +75,8 @@ def process_file(filename: str):
 		print("Received response from OpenAI API.")
 
 		# Determine the start index of the content, after the first "```markdown" or "```"
-		firstMarkerMarkdownIndex = response.text.find("```markdown")
-		firstMarkerPlainIndex = response.text.find("```")
+		firstMarkerMarkdownIndex = response.output_text.find("```markdown")
+		firstMarkerPlainIndex = response.output_text.find("```")
 
 		startIndex = -1
 		# Check if "```markdown" is present and is the first relevant marker
@@ -89,11 +89,11 @@ def process_file(filename: str):
 			raise ValueError("No valid start marker found in the response.")
 
 		# Determine the end index of the content, which is at the beginning of the last "```"
-		endIndex = response.text.rfind("```")
+		endIndex = response.output_text.rfind("```")
 
 		# Extract and strip if valid start and end positions are found
 		if startIndex != -1 and endIndex != -1 and endIndex >= startIndex:
-			output = response.text[startIndex:endIndex].strip()
+			output = response.output_text[startIndex:endIndex].strip()
 		else:
 			raise ValueError("Invalid start or end index for content extraction.")
 
