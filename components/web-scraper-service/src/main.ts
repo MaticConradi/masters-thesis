@@ -53,6 +53,7 @@ async function processPapers(): Promise<void> {
 			},
 		};
 		await client.runJob(request);
+		await new Promise(resolve => setTimeout(resolve, 500));
 	}
 }
 
