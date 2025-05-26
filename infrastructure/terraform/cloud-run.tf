@@ -47,11 +47,6 @@ resource "google_cloud_run_v2_job" "web_scraper_worker" {
       }
     }
   }
-
-  depends_on = [
-    google_secret_manager_secret_iam_member.database_url_accessor,
-    google_secret_manager_secret_iam_member.proxy_list_url_accessor,
-  ]
 }
 
 resource "google_cloud_run_v2_job" "markdown_processor" {
@@ -96,11 +91,6 @@ resource "google_cloud_run_v2_job" "markdown_processor" {
       }
     }
   }
-
-  depends_on = [
-    google_secret_manager_secret_iam_member.database_url_accessor,
-    google_secret_manager_secret_iam_member.proxy_list_url_accessor,
-  ]
 }
 
 resource "google_cloud_run_v2_service" "web_scraper_service" {
@@ -135,6 +125,15 @@ resource "google_cloud_run_v2_service" "web_scraper_service" {
         }
       }
       env {
+        name = "PROXY_LIST_URL"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.proxy_list_url.secret_id
+            version = "latest"
+          }
+        }
+      }
+      env {
         name  = "PROJECT_ID"
         value = var.project_id
       }
@@ -148,11 +147,6 @@ resource "google_cloud_run_v2_service" "web_scraper_service" {
       }
     }
   }
-
-  depends_on = [
-    google_secret_manager_secret_iam_member.database_url_accessor,
-    google_secret_manager_secret_iam_member.proxy_list_url_accessor,
-  ]
 }
 
 resource "google_cloud_run_v2_service" "pdf_processor_service" {

@@ -4,8 +4,29 @@ config()
 import express from "express"
 import { JobsClient } from "@google-cloud/run";
 import { fetchPapersWithCodeTasks } from "./db/queries/papers-with-code.js";
+import { updateProxies } from "./db/queries/proxies.js";
 
 const client = new JobsClient()
+
+/**
+ * Update proxy list
+ */
+async function updateProxyList() {
+	const response = await fetch(process.env.PROXY_LIST_URL!)
+	if (!response.ok) {
+		throw new Error("Failed to fetch proxies")
+	}
+
+	const proxies = await response.text().then(text => {
+		return text.split("\n")
+			.map(line => {
+				const [ip, port, username, password] = line.trim().split(":")
+				return { ip: `${ip}:${port}`, username, password }
+			})
+	})
+
+	await updateProxies(proxies);
+}
 
 /**
  * Obtains an exhaustive list of tasks and subtasks from the SOTA page of Papers with Code.
@@ -58,6 +79,17 @@ async function processPapers(): Promise<void> {
 }
 
 const app = express()
+
+app.get('/proxy/update', async (req, res) => {
+	console.log("Received request for /proxy/update")
+	try {
+		await updateProxyList();
+		res.json({ message: "Proxy list updated successfully" });
+	} catch (error) {
+		console.error("Error in /proxy/update endpoint:", error);
+		res.status(500).send({ message: "Failed to update proxy list", error: error });
+	}
+});
 
 app.get('/papers-with-code/update-tasks', async (req, res) => {
 	console.log("Received request for /papers-with-code/update-tasks")
