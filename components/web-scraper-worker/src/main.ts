@@ -161,7 +161,6 @@ async function scrapePapersWithCodePapers(task: string | undefined): Promise<num
 				const title = await titleElement.getProperty("innerText").then(prop => prop.jsonValue())
 
 				if (processedPapers.includes(origin)) {
-					console.log(`Paper ${origin} already processed, skipping`)
 					continue
 				}
 

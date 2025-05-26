@@ -126,6 +126,15 @@ resource "google_cloud_run_v2_service" "web_scraper_service" {
       image = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.web_scraper_service.repository_id}/production:latest"
 
       env {
+        name = "DATABASE_URL"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.database_url.secret_id
+            version = "latest"
+          }
+        }
+      }
+      env {
         name  = "PROJECT_ID"
         value = var.project_id
       }
@@ -183,7 +192,7 @@ resource "google_cloud_run_v2_service" "pdf_processor_service" {
       }
     }
 
-	node_selector {
+    node_selector {
       accelerator = "nvidia-l4"
     }
   }
