@@ -70,7 +70,8 @@ def process_file(filename: str):
 
 		response = client.responses.create(
 			model="gpt-4.1-nano",
-			input=f"Inaccurate OCR text with markdown formatting:\n```{mmdContent}```\n\nExtracted unformatted text:\n```{text}```\n\nProvide a corrected version of the markdown text, ensuring that the formatting is preserved and the content is accurate. The output should be in markdown format. Respond with the complete content without any placeholders referencing original content, all within a single code block marked with ```.",
+			instructions="Combine the two provided texts, ensuring that the formatting is preserved and the content is accurate. The output should be in markdown format. Provide the complete text without any placeholders or references to the original content for the sake of shortening the response; always provide the full content, all within a single code block marked with ```.",
+			input=f"Inaccurate OCR text with markdown formatting:\n```{mmdContent}```\n\nUnformatted text:\n```{text}```",
 		)
 		print("Received response from OpenAI API.")
 
