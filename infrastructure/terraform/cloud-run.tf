@@ -81,6 +81,15 @@ resource "google_cloud_run_v2_job" "markdown_processor" {
           }
         }
         env {
+          name = "OPENAI_API_KEY"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.openai_api_key.secret_id
+              version = "latest"
+            }
+          }
+        }
+        env {
           name  = "ML_PAPERS_BUCKET_NAME"
           value = google_storage_bucket.ml_papers.name
         }

@@ -3,7 +3,7 @@ from os import path, getenv
 import tempfile
 import shutil
 from PyPDF2 import PdfReader
-from google import genai
+from openai import OpenAI
 from google.cloud import storage
 from google.cloud import bigquery
 
@@ -15,7 +15,7 @@ bigquery = bigquery.Client()
 dataset = bigquery.dataset("mc_magistrska")
 table = dataset.table("articles")
 
-client = genai.Client(api_key=getenv("GEMINI_API_KEY"))
+client = OpenAI()
 
 def list_processed_pdf_files():
 	"""
@@ -65,14 +65,14 @@ def process_file(filename: str):
 			text += page.extract_text()
 
 		if text == "":
-			print("No text found in PDF. Skipping file.")
+			print("No text found in PDF. Skipping file")
 			return
 
-		response = client.models.generate_content(
-			model='gemini-2.5-pro-preview-05-06',
-			contents=f"Inaccurate OCR text with markdown formatting:\n```{mmdContent}```\n\nExtracted unformatted text:\n```{text}```\n\nProvide a corrected version of the markdown text, ensuring that the formatting is preserved and the content is accurate. The output should be in markdown format. Respond with a single code block marked with ```.",
+		response = client.responses.create(
+			model="gpt-4.1-nano",
+			input=f"Inaccurate OCR text with markdown formatting:\n```{mmdContent}```\n\nExtracted unformatted text:\n```{text}```\n\nProvide a corrected version of the markdown text, ensuring that the formatting is preserved and the content is accurate. The output should be in markdown format. Respond with a single code block marked with ```.",
 		)
-		print("Received response from Gemini API.")
+		print("Received response from OpenAI API.")
 
 		# Determine the start index of the content, after the first "```markdown" or "```"
 		firstMarkerMarkdownIndex = response.text.find("```markdown")
@@ -80,12 +80,11 @@ def process_file(filename: str):
 
 		startIndex = -1
 		# Check if "```markdown" is present and is the first relevant marker
-		if firstMarkerMarkdownIndex != -1 and \
-		   (firstMarkerPlainIndex == -1 or firstMarkerMarkdownIndex <= firstMarkerPlainIndex):
-		    startIndex = firstMarkerMarkdownIndex + len("```markdown")
+		if firstMarkerMarkdownIndex != -1 and (firstMarkerPlainIndex == -1 or firstMarkerMarkdownIndex <= firstMarkerPlainIndex):
+			startIndex = firstMarkerMarkdownIndex + len("```markdown")
 		# Else, check if "```" is present and is the first relevant marker
 		elif firstMarkerPlainIndex != -1:
-		    startIndex = firstMarkerPlainIndex + len("```")
+			startIndex = firstMarkerPlainIndex + len("```")
 		else:
 			raise ValueError("No valid start marker found in the response.")
 
@@ -94,7 +93,7 @@ def process_file(filename: str):
 
 		# Extract and strip if valid start and end positions are found
 		if startIndex != -1 and endIndex != -1 and endIndex >= startIndex:
-		    output = response.text[startIndex:endIndex].strip()
+			output = response.text[startIndex:endIndex].strip()
 		else:
 			raise ValueError("Invalid start or end index for content extraction.")
 
