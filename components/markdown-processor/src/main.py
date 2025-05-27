@@ -2,6 +2,7 @@ from time import time
 from os import path, getenv
 import tempfile
 import shutil
+from threading import ThreadPoolExecutor
 from PyPDF2 import PdfReader
 from openai import OpenAI
 from google.cloud import storage
@@ -50,7 +51,6 @@ def process_file(filename: str):
 	try:
 		localPdfPath = path.join(temporaryDir, f"{filename}.pdf")
 
-		print(f"Downloading {filename}.pdf to {localPdfPath}...")
 		pdfBlob = bucket.blob(f"{filename}.pdf")
 		pdfBlob.download_to_filename(localPdfPath)
 		pdfMetadata = pdfBlob.metadata
@@ -65,7 +65,7 @@ def process_file(filename: str):
 			text += page.extract_text()
 
 		if text == "":
-			print("No text found in PDF. Skipping file")
+			print(f"No text found in {filename}, skipping file")
 			return
 
 		response = client.responses.create(
@@ -73,7 +73,6 @@ def process_file(filename: str):
 			instructions="Combine the two provided texts, ensuring that the formatting is preserved and the content is accurate. The output should be in markdown format. Provide the complete text without any placeholders or references to the original content for the sake of shortening the response; always provide the full content, all within a single code block marked with ```. Do not add any additional formatting beyond what is necessary to preserve the original structure and content.",
 			input=f"Inaccurate OCR text with markdown formatting:\n```{mmdContent}```\n\nUnformatted text:\n```{text}```",
 		)
-		print("Received response from OpenAI API.")
 
 		# Determine the start index of the content, after the first "```markdown" or "```"
 		firstMarkerMarkdownIndex = response.output_text.find("```markdown")
@@ -87,7 +86,7 @@ def process_file(filename: str):
 		elif firstMarkerPlainIndex != -1:
 			startIndex = firstMarkerPlainIndex + len("```")
 		else:
-			raise ValueError("No valid start marker found in the response.")
+			raise ValueError(f"No valid start marker found in the response for {filename}.")
 
 		# Determine the end index of the content, which is at the beginning of the last "```"
 		endIndex = response.output_text.rfind("```")
@@ -99,7 +98,6 @@ def process_file(filename: str):
 			raise ValueError("Invalid start or end index for content extraction.")
 
 		# Upload the corrected markdown content to GCS
-		print("Uploading corrected markdown content to GCS and BigQuery...")
 		correctedMmdFilename = f"{filename}-corrected.mmd"
 		correctedMmdBlob = bucket.blob(correctedMmdFilename)
 		correctedMmdBlob.upload_from_string(output, content_type="text/markdown")
@@ -108,7 +106,7 @@ def process_file(filename: str):
 		# bqRow = {
 		# }
 		# bigquery.insert_rows_json(table, [bqRow])
-		print(f"Uploaded corrected markdown file: {correctedMmdFilename}")
+		print(f"Uploaded corrected markdown file for {filename}")
 
 	except Exception as e:
 		print(f"An error occurred while processing {filename}: {e}")
@@ -123,14 +121,12 @@ def main():
 	Main function to process PDF files in a GCS bucket.
 	"""
 	processedFiles = list_processed_pdf_files()
+	pool = ThreadPoolExecutor(max_workers=4)
 
 	for pdf_filename in processedFiles:
-		try:
-			process_file(pdf_filename)
-		except KeyboardInterrupt:
-			break
-		except Exception as e:
-			print(f"Error processing {pdf_filename}: {e}")
+		pool.submit(process_file, pdf_filename)
+
+	pool.shutdown(wait=True)
 
 if __name__ == "__main__":
 	main()

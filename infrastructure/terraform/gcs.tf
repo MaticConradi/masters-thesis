@@ -13,14 +13,8 @@ resource "google_storage_bucket" "ml_papers" {
   force_destroy = false
 }
 
-resource "google_storage_bucket_iam_member" "ml_papers_cloud_run_writer" {
-	bucket = google_storage_bucket.ml_papers.name
-	role   = "roles/storage.objectCreator"
-	member = "serviceAccount:${google_service_account.cloud_run_sa.email}"
-}
-
-resource "google_storage_bucket_iam_member" "ml_papers_cloud_run_reader" {
-	bucket = google_storage_bucket.ml_papers.name
-	role   = "roles/storage.objectViewer"
-	member = "serviceAccount:${google_service_account.cloud_run_sa.email}"
+resource "google_storage_bucket_iam_member" "ml_papers_cloud_run_admin" {
+  bucket = google_storage_bucket.ml_papers.name
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_service_account.cloud_run_sa.email}"
 }
