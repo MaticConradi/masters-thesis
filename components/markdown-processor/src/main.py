@@ -86,7 +86,7 @@ def process_file(filename: str):
 		elif firstMarkerPlainIndex != -1:
 			startIndex = firstMarkerPlainIndex + len("```")
 		else:
-			raise ValueError(f"No valid start marker found in the response for {filename}.")
+			raise ValueError(f"No valid start marker found in the response for {filename}")
 
 		# Determine the end index of the content, which is at the beginning of the last "```"
 		endIndex = response.output_text.rfind("```")
@@ -95,7 +95,7 @@ def process_file(filename: str):
 		if startIndex != -1 and endIndex != -1 and endIndex >= startIndex:
 			output = response.output_text[startIndex:endIndex].strip()
 		else:
-			raise ValueError("Invalid start or end index for content extraction.")
+			raise ValueError(f"Invalid start or end index for content extraction from {filename}: startIndex={startIndex}, endIndex={endIndex}")
 
 		# Upload the corrected markdown content to GCS
 		correctedMmdFilename = f"{filename}-corrected.mmd"
