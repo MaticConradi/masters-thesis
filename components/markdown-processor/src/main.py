@@ -2,7 +2,7 @@ from time import time
 from os import path, getenv
 import tempfile
 import shutil
-from threading import ThreadPoolExecutor
+from multiprocessing.pool import ThreadPool
 from PyPDF2 import PdfReader
 from openai import OpenAI
 from google.cloud import storage
@@ -121,12 +121,9 @@ def main():
 	Main function to process PDF files in a GCS bucket.
 	"""
 	processedFiles = list_processed_pdf_files()
-	pool = ThreadPoolExecutor(max_workers=4)
-
-	for pdf_filename in processedFiles:
-		pool.submit(process_file, pdf_filename)
-
-	pool.shutdown(wait=True)
+	with ThreadPool(processes=4) as pool:
+		for pdf_filename in processedFiles:
+			pool.apply_async(process_file, args=(pdf_filename,))
 
 if __name__ == "__main__":
 	main()
