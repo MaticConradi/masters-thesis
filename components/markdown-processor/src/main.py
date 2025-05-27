@@ -121,9 +121,13 @@ def main():
 	Main function to process PDF files in a GCS bucket.
 	"""
 	processedFiles = list_processed_pdf_files()
-	with ThreadPool(processes=4) as pool:
-		for pdf_filename in processedFiles:
-			pool.apply_async(process_file, args=(pdf_filename,))
+	pool = ThreadPool(processes=4)
+
+	for pdf_filename in processedFiles:
+		pool.apply_async(process_file, args=(pdf_filename,))
+
+	pool.close()
+	pool.join()
 
 if __name__ == "__main__":
 	main()
