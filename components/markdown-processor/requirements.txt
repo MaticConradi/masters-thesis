@@ -1,5 +1,4 @@
 PyPDF2
 google-cloud-storage
 google-cloud-bigquery
-google-genai
 openai

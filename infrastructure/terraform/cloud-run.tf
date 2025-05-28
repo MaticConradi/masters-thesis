@@ -67,6 +67,13 @@ resource "google_cloud_run_v2_job" "markdown_processor" {
       containers {
         image = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.markdown_processor.repository_id}/production:latest"
 
+		resources {
+		  limits = {
+			memory = "1Gi"
+			cpu    = "1"
+		  }
+		}
+
         env {
           name = "GEMINI_API_KEY"
           value_source {
