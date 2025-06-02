@@ -37,7 +37,7 @@ def list_processed_pdf_files():
 		if ext.lower() == ".pdf":
 			pdfFiles.add(name)
 		elif ext.lower() == ".mmd" and name.endswith("-corrected"):
-			correctedMmdFiles.add(name)
+			correctedMmdFiles.add(name.replace("-corrected", ""))
 		elif ext.lower() == ".mmd":
 			mmdFiles.add(name)
 
