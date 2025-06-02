@@ -121,6 +121,8 @@ def main():
 	Main function to process PDF files in a GCS bucket.
 	"""
 	processedFiles = list_processed_pdf_files()
+	print(f"Found {len(processedFiles)} files to process.")
+
 	pool = ThreadPool(processes=64)
 
 	for pdf_filename in processedFiles:
