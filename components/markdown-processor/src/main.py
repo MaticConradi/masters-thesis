@@ -70,7 +70,7 @@ def process_file(filename: str):
 
 		response = client.responses.create(
 			model="gpt-4.1-nano",
-			instructions="Combine the two provided texts, ensuring that the formatting is preserved and the content is accurate. The output should be in markdown format. Provide the complete text without any placeholders or references to the original content for the sake of shortening the response; always provide the full content, all within a single code block marked with ``` at the start and at the end of the block. Do not add any additional formatting beyond what is necessary to preserve the original structure and content.",
+			instructions="Combine the two provided texts, ensuring that the formatting is preserved and the content is accurate. The output should be in markdown format. Never respond with placeholders or references to the original content for the sake of shortening the response; always provide the full text, all within a single code block marked with ``` at the start and at the end of the text. Do not add any additional formatting beyond what is necessary to preserve the original structure and content. Unformatted text is not going to contain correct equations, so it is important to use the markdown text as the primary source for formatting. Always use the same header structure as in the markdown text, and do not change the order of sections. Do not summarize or alter the content in any way, just ensure that the markdown formatting is applied correctly and any missing or incorrect text is filled in accurately.",
 			input=f"Inaccurate OCR text with markdown formatting:\n```{mmdContent}```\n\nUnformatted text:\n```{text}```",
 		)
 

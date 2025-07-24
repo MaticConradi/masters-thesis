@@ -3,7 +3,7 @@ from os import path, getenv
 import subprocess
 import tempfile
 import shutil
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
 from google.cloud import storage
 
 BUCKET_NAME = getenv("ML_PAPERS_BUCKET_NAME")
