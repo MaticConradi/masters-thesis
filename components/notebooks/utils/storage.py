@@ -11,6 +11,24 @@ bucket = storage.bucket(BUCKET_NAME)
 # * LISTING FILES *
 # *****************
 
+def list_unprocessed_pdf_files():
+	blobs = bucket.list_blobs()
+
+	pdfFiles = set()
+	mmdFiles = set()
+
+	for blob in blobs:
+		name, ext = path.splitext(blob.name)
+		if ext.lower() == ".pdf":
+			pdfFiles.add(name)
+		elif ext.lower() == ".mmd":
+			mmdFiles.add(name)
+
+	unprocessedPdfFiles = pdfFiles - mmdFiles
+	result = [f"{name}.pdf" for name in unprocessedPdfFiles]
+
+	return result
+
 def list_pdf_files():
 	blobs = bucket.list_blobs()
 
