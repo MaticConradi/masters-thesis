@@ -1,5 +1,5 @@
 from os import path
-from json import loads
+from json import dumps, loads
 from google.cloud import storage
 
 BUCKET_NAME = "mc-mag-temp-ml-papers"
@@ -63,6 +63,23 @@ def list_processed_mmd_files():
 		name, ext = path.splitext(blob.name)
 		if ext.lower() == ".mmd" and name.endswith("-corrected"):
 			files.add(name[:-10])
+
+	return files
+
+def list_keywordless_mmd_files():
+	blobs = bucket.list_blobs()
+
+	files = set()
+	keywords = set()
+
+	for blob in blobs:
+		name, ext = path.splitext(blob.name)
+		if ext.lower() == ".mmd" and name.endswith("-corrected"):
+			files.add(name[:-10])
+		elif ext.lower() == ".json" and name.endswith("-keywords"):
+			keywords.add(name[:-9])
+
+	files = files - keywords
 
 	return files
 
@@ -145,3 +162,23 @@ def download_file_metadata(filename):
 	metadata["tasks"] = replacements
 
 	return metadata
+
+# *******************
+# * UPLOADING FILES *
+# ****************
+
+def upload_keywords(filename, keywords):
+	blob = bucket.blob(f"{filename}-keywords.json")
+	blob.upload_from_string(dumps(keywords), content_type="application/json")
+
+# ****************
+# * DELETE FILES *
+# ****************
+
+def delete_cleaned_mmd(filename):
+	blob = bucket.blob(f"{filename}-corrected.mmd")
+	try: blob.delete()
+	except: pass
+	blob = bucket.blob(f"{filename}-keywords.json")
+	try: blob.delete()
+	except: pass
