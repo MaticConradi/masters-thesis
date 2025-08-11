@@ -163,6 +163,11 @@ def download_file_metadata(filename):
 
 	return metadata
 
+def download_keywords(filename):
+	blob = bucket.blob(f"{filename}-keywords.json")
+	keywords = blob.download_as_bytes().decode("utf-8")
+	return loads(keywords)
+
 # *******************
 # * UPLOADING FILES *
 # ****************
