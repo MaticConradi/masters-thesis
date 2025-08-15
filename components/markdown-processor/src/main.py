@@ -126,7 +126,7 @@ def main():
 	processedFiles = list_processed_pdf_files()
 	print(f"Found {len(processedFiles)} files to process.")
 
-	pool = ThreadPool(processes=100)
+	pool = ThreadPool(processes=500)
 
 	for pdf_filename in processedFiles:
 		pool.apply_async(process_file, args=(pdf_filename,))
