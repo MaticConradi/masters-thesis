@@ -49,7 +49,7 @@ def list_mmd_files():
 
 	for blob in blobs:
 		name, ext = path.splitext(blob.name)
-		if ext.lower() == ".mmd":
+		if ext.lower() == ".mmd" and not name.endswith("-corrected"):
 			files.add(name)
 
 	return files
@@ -80,6 +80,23 @@ def list_keywordless_mmd_files():
 			keywords.add(name[:-9])
 
 	files = files - keywords
+
+	return files
+
+def list_plaintextless_files():
+	blobs = bucket.list_blobs()
+
+	files = set()
+	plaintext = set()
+
+	for blob in blobs:
+		name, ext = path.splitext(blob.name)
+		if ext.lower() == ".mmd" and name.endswith("-corrected"):
+			files.add(name[:-10])
+		elif ext.lower() == ".txt" and name.endswith("-plaintext"):
+			plaintext.add(name[:-10])
+
+	files = files - plaintext
 
 	return files
 
@@ -168,6 +185,11 @@ def download_keywords(filename):
 	keywords = blob.download_as_bytes().decode("utf-8")
 	return loads(keywords)
 
+def download_plain_text(filename):
+	blob = bucket.blob(f"{filename}-plaintext.txt")
+	plaintext = blob.download_as_bytes().decode("utf-8")
+	return plaintext
+
 # *******************
 # * UPLOADING FILES *
 # ****************
@@ -175,6 +197,10 @@ def download_keywords(filename):
 def upload_keywords(filename, keywords):
 	blob = bucket.blob(f"{filename}-keywords.json")
 	blob.upload_from_string(dumps(keywords), content_type="application/json")
+
+def upload_plaintext(filename, plaintext):
+	blob = bucket.blob(f"{filename}-plaintext.txt")
+	blob.upload_from_string(plaintext, content_type="text/plain")
 
 # ****************
 # * DELETE FILES *

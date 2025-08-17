@@ -23,6 +23,7 @@ __pycache__/
 
 # Data
 data/
+output/
 
 # Node dependencies
 node_modules
