@@ -83,6 +83,18 @@ def list_keywordless_mmd_files():
 
 	return files
 
+def list_sparse_vector_files():
+	blobs = bucket.list_blobs()
+
+	files = set()
+
+	for blob in blobs:
+		name, ext = path.splitext(blob.name)
+		if ext.lower() == ".json" and name.endswith("-vectors"):
+			files.add(name[:-8])
+
+	return files
+
 def list_plaintextless_files():
 	blobs = bucket.list_blobs()
 
@@ -197,6 +209,10 @@ def download_plain_text(filename):
 def upload_keywords(filename, keywords):
 	blob = bucket.blob(f"{filename}-keywords.json")
 	blob.upload_from_string(dumps(keywords), content_type="application/json")
+
+def upload_sparse_vectors(filename, vectors):
+	blob = bucket.blob(f"{filename}-vectors.json")
+	blob.upload_from_string(dumps(vectors), content_type="application/json")
 
 def upload_plaintext(filename, plaintext):
 	blob = bucket.blob(f"{filename}-plaintext.txt")
