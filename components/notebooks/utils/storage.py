@@ -126,6 +126,16 @@ def download_processed_mmd_file(filename):
 	md = blob.download_as_bytes().decode("utf-8")
 	return md
 
+def download_plain_text(filename):
+	blob = bucket.blob(f"{filename}-plaintext.txt")
+	plaintext = blob.download_as_bytes().decode("utf-8")
+	return plaintext
+
+def download_sparse_vectors(filename):
+	blob = bucket.blob(f"{filename}-vectors.json")
+	vectors = blob.download_as_bytes().decode("utf-8")
+	return loads(vectors)
+
 # ************************
 # * DOWNLOADING METADATA *
 # ************************
@@ -197,14 +207,9 @@ def download_keywords(filename):
 	keywords = blob.download_as_bytes().decode("utf-8")
 	return loads(keywords)
 
-def download_plain_text(filename):
-	blob = bucket.blob(f"{filename}-plaintext.txt")
-	plaintext = blob.download_as_bytes().decode("utf-8")
-	return plaintext
-
 # *******************
 # * UPLOADING FILES *
-# ****************
+# *******************
 
 def upload_keywords(filename, keywords):
 	blob = bucket.blob(f"{filename}-keywords.json")
