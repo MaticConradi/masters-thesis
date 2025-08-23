@@ -141,35 +141,56 @@ def download_sparse_vectors(filename):
 # ************************
 
 REPLACEMENTS = {
-	"reinforcement-learning": "Reinforcement Learning",
-	"object-detection": "Object Detection",
-	"speech-recognition": "Speech Recognition",
-	"intent-classification": "Intent Classification",
-	"speaker-diarization": "Speaker Diarization",
-	"coreference-resolution": "Coreference Resolution",
-	"text-classification": "Text Classification",
-	"Sentence-Embedding": "Sentence Embedding",
-	"Question-Generation": "Question Generation",
-	"named-entity-recognition": "Named Entity Recognition",
-	"Multi Label Text Classification": "Multi-Label Text Classification",
-	"slot-filling": "Slot Filling",
-	"Few Shot Action Recognition": "Few-Shot action recognition",
-	"continuous-control": "Continuous Control",
-	"Open Vocabulary Semantic Segmentation": "Open-Vocabulary Semantic Segmentation",
-	"class-incremental learning": "Class Incremental Learning",
-	"Low Resource Neural Machine Translation": "Low-Resource Neural Machine Translation",
-	"token-classification": "Token Classification",
-	"Open Vocabulary Object Detection": "Open-vocabulary object detection",
-	"Hand Gesture Recognition": "Hand-Gesture Recognition",
-	"Weakly Supervised Temporal Action Localization": "Weakly-supervised Temporal Action Localization",
-	"Micro Expression Recognition": "Micro-Expression Recognition",
-	"Multi Future Trajectory Prediction": "Multi-future Trajectory Prediction",
-	"fill-mask": "Fill Mask",
+	"reinforcement-learning": "reinforcement learning",
+	"object-detection": "object detection",
+	"speech-recognition": "speech recognition",
+	"intent-classification": "intent classification",
+	"speaker-diarization": "speaker diarization",
+	"coreference-resolution": "coreference resolution",
+	"text-classification": "text classification",
+	"sentence-embedding": "sentence embedding",
+	"question-generation": "question generation",
+	"named-entity-recognition": "named entity recognition",
+	"multi label text classification": "multi-label text classification",
+	"multilabel text classification": "multi-label text classification",
+	"slot-filling": "slot filling",
+	"few shot action recognition": "few-shot action recognition",
+	"continuous-control": "continuous control",
+	"open vocabulary semantic segmentation": "open-vocabulary semantic segmentation",
+	"class-incremental learning": "class-incremental learning",
+	"low resource neural machine translation": "low-resource neural machine translation",
+	"token-classification": "token classification",
+	"open vocabulary object detection": "open-vocabulary object detection",
+	"hand gesture recognition": "hand gesture recognition",
+	"weakly supervised temporal action localization": "weakly-supervised temporal action localization",
+	"micro expression recognition": "micro-expression recognition",
+	"multi future trajectory prediction": "multi-future trajectory prediction",
+	"fill-mask": "fill mask",
+	"alzheimer's detection": "alzheimer's detection",
+	"alzheimer's disease detection": "alzheimer's detection",
+	"1 image, 2*2 stitchi": "1 image, 2*2 stitching",
+	"multi view detection": "multi-view detection",
+	"inverse-tone-mapping": "inverse tone mapping",
+	"text based person retrieval": "text-based person retrieval",
+	"text to speech": "text-to-speech",
+	"reranking": "re-ranking",
+	"passage reranking": "passage re-ranking",
+	"multimodal recommendation": "multi-modal recommendation",
+	"hand-gesture recognition": "hand gesture recognition",
+	"multiview learning": "multi-view learning",
+	"multi-label-classification": "multi-label classification",
+	"lip reading": "lipreading",
+	"weakly supervised semantic segmentation": "weakly-supervised semantic segmentation",
+	"zeroshot video question answer": "zero-shot video question answering",
+	"few-shot-ner": "few-shot ner",
+	"multi-media recommendation": "multimedia recommendation",
+	"math word problem solvingω": "math word problem solving",
+	"full reference image quality assessment": "full-reference image quality assessment",
 	"valid": None,
-	"All": None,
-	"Model": None,
-	"Sentence": None,
-	"Attribute": None,
+	"all": None,
+	"model": None,
+	"sentence": None,
+	"attribute": None,
 }
 
 def download_file_metadata(filename):
@@ -183,6 +204,7 @@ def download_file_metadata(filename):
 	tasks = metadata["tasks"]
 	replacements = []
 	for task in tasks:
+		task = task.lower()
 		if task in REPLACEMENTS:
 			replacement = REPLACEMENTS[task]
 			if replacement is None:
@@ -196,7 +218,7 @@ def download_file_metadata(filename):
 				continue
 		else:
 			# If the task is not in the replacements, we keep it as is
-			replacements.append(task.title())
+			replacements.append(task)
 
 	metadata["tasks"] = replacements
 
