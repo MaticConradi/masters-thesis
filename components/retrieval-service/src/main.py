@@ -13,15 +13,16 @@ storageClient = storage.Client()
 bucket = storageClient.bucket(BUCKET_NAME)
 
 # Download and load sparse index
-SPARSE_INDEX_PATH = "./sparse_index.db"
-bucket.blob("Index/sparse_index.db").download_to_filename(SPARSE_INDEX_PATH)
-conn = sqlite3.connect(SPARSE_INDEX_PATH, check_same_thread=False)
+SPARSE_INDEX_PATH = "sparse_index.db"
+bucket.blob(f"Index/{SPARSE_INDEX_PATH}").download_to_filename(SPARSE_INDEX_PATH)
+conn = sqlite3.connect(f"./{SPARSE_INDEX_PATH}", check_same_thread=False)
 cursor = conn.cursor()
 
 # Global model initialization
-MODEL_NAME = "naver/splade-cocondenser-ensembledistil"
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModelForMaskedLM.from_pretrained(MODEL_NAME, device_map="auto")
+MODEL_NAME = "splade-cocondenser-ensembledistil"
+bucket.blob(f"Models/{MODEL_NAME}").download_to_filename(MODEL_NAME)
+tokenizer = AutoTokenizer.from_pretrained(f"./{MODEL_NAME}")
+model = AutoModelForMaskedLM.from_pretrained(f"./{MODEL_NAME}", device_map="auto")
 model.eval()
 
 # OpenAI client for dense search
@@ -33,9 +34,9 @@ documents = cursor.fetchall()
 indexDocumentMap = {row[0]: row[1] for row in documents}
 
 # Download and load dense index
-DENSE_INDEX_PATH = "./dense_index.faiss"
-bucket.blob("Index/dense_index.faiss").download_to_filename(DENSE_INDEX_PATH)
-dense_index = faiss.read_index(DENSE_INDEX_PATH)
+DENSE_INDEX_PATH = "dense_index.faiss"
+bucket.blob(f"Index/{DENSE_INDEX_PATH}").download_to_filename(DENSE_INDEX_PATH)
+dense_index = faiss.read_index(f"./{DENSE_INDEX_PATH}")
 
 app = Flask(__name__)
 
