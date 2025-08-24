@@ -200,6 +200,41 @@ resource "google_cloud_run_v2_service" "pdf_processor_service" {
   }
 }
 
+resource "google_cloud_run_v2_service" "search_service" {
+  provider = google
+  name     = "search-service"
+  location = var.region
+  project  = var.project_id
+
+  deletion_protection = false
+
+  template {
+    service_account                  = google_service_account.cloud_run_sa.email
+    timeout                          = "60s"
+
+    scaling {
+      max_instance_count = 1
+      min_instance_count = 0
+    }
+
+    containers {
+      image = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.retrieval_service.repository_id}/production:latest"
+
+      resources {
+        limits = {
+          memory = "32Gi"
+          cpu    = "8"
+        }
+      }
+
+      env {
+        name  = "ML_PAPERS_BUCKET_NAME"
+        value = google_storage_bucket.ml_papers.name
+      }
+    }
+  }
+}
+
 resource "google_project_iam_member" "cloud_run_sa_job_admin" {
   project = var.project_id
   role    = "roles/run.admin"

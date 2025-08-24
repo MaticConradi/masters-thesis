@@ -29,3 +29,11 @@ resource "google_artifact_registry_repository" "markdown_processor" {
   description   = "Markdown Processor repository (masters thesis)"
   format        = "DOCKER"
 }
+
+resource "google_artifact_registry_repository" "retrieval_service" {
+  provider      = google
+  location      = var.region
+  repository_id = "retrieval-service"
+  description   = "Retrieval Service repository (masters thesis)"
+  format        = "DOCKER"
+}

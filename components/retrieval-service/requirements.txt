@@ -1,0 +1,7 @@
+transformers
+torch
+google-cloud-storage
+Flask
+gunicorn
+faiss
+openai

@@ -44,9 +44,6 @@ coverage
 out/
 dist/
 
-# Production
-build
-
 # Misc
 .DS_Store
 *.pem
