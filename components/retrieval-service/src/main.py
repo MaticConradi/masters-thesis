@@ -9,13 +9,14 @@ from openai import OpenAI
 from google.cloud import storage
 
 BUCKET_NAME = getenv("ML_PAPERS_BUCKET_NAME")
+print(BUCKET_NAME)
 storageClient = storage.Client()
 bucket = storageClient.bucket(BUCKET_NAME)
 
-# Global database connection
-DB_PATH = "./sparse_index.db"
-bucket.blob("index/sparse_index.db").download_to_filename(DB_PATH)
-conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+# Download and load sparse index
+SPARSE_INDEX_PATH = "./sparse_index.db"
+bucket.blob("index/sparse_index.db").download_to_filename(SPARSE_INDEX_PATH)
+conn = sqlite3.connect(SPARSE_INDEX_PATH, check_same_thread=False)
 cursor = conn.cursor()
 
 # Global model initialization
