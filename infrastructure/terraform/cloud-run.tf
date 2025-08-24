@@ -231,6 +231,11 @@ resource "google_cloud_run_v2_service" "search_service" {
         name  = "ML_PAPERS_BUCKET_NAME"
         value = google_storage_bucket.ml_papers.name
       }
+
+	  env {
+		name  = "OPENAI_API_KEY"
+		value = google_secret_manager_secret.openai_api_key.secret_id
+	  }
     }
   }
 }
