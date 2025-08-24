@@ -20,7 +20,9 @@ cursor = conn.cursor()
 
 # Global model initialization
 MODEL_NAME = "splade-cocondenser-ensembledistil"
-bucket.blob(f"Models/{MODEL_NAME}").download_to_filename(MODEL_NAME)
+blobs = bucket.list_blobs(prefix=f"Models/{MODEL_NAME}")
+for blob in blobs:
+    blob.download_to_filename(f"./{MODEL_NAME}/{blob.name}")
 tokenizer = AutoTokenizer.from_pretrained(f"./{MODEL_NAME}")
 model = AutoModelForMaskedLM.from_pretrained(f"./{MODEL_NAME}", device_map="auto")
 model.eval()
