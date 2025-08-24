@@ -9,13 +9,12 @@ from openai import OpenAI
 from google.cloud import storage
 
 BUCKET_NAME = getenv("ML_PAPERS_BUCKET_NAME")
-print(BUCKET_NAME)
 storageClient = storage.Client()
 bucket = storageClient.bucket(BUCKET_NAME)
 
 # Download and load sparse index
 SPARSE_INDEX_PATH = "./sparse_index.db"
-bucket.blob("index/sparse_index.db").download_to_filename(SPARSE_INDEX_PATH)
+bucket.blob("Index/sparse_index.db").download_to_filename(SPARSE_INDEX_PATH)
 conn = sqlite3.connect(SPARSE_INDEX_PATH, check_same_thread=False)
 cursor = conn.cursor()
 
@@ -35,7 +34,7 @@ indexDocumentMap = {row[0]: row[1] for row in documents}
 
 # Download and load dense index
 DENSE_INDEX_PATH = "./dense_index.faiss"
-bucket.blob("index/dense_index.faiss").download_to_filename(DENSE_INDEX_PATH)
+bucket.blob("Index/dense_index.faiss").download_to_filename(DENSE_INDEX_PATH)
 dense_index = faiss.read_index(DENSE_INDEX_PATH)
 
 app = Flask(__name__)
