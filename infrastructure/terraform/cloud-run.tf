@@ -200,9 +200,9 @@ resource "google_cloud_run_v2_service" "pdf_processor_service" {
   }
 }
 
-resource "google_cloud_run_v2_service" "search_service" {
+resource "google_cloud_run_v2_service" "retrieval_service" {
   provider = google
-  name     = "search-service"
+  name     = "retrieval-service"
   location = var.region
   project  = var.project_id
 

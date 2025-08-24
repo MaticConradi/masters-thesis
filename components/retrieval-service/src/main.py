@@ -13,7 +13,7 @@ storageClient = storage.Client()
 bucket = storageClient.bucket(BUCKET_NAME)
 
 # Global database connection
-DB_PATH = "./output/sparse_index.db"
+DB_PATH = "./sparse_index.db"
 bucket.blob("index/sparse_index.db").download_to_filename(DB_PATH)
 conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 cursor = conn.cursor()
@@ -33,7 +33,7 @@ documents = cursor.fetchall()
 indexDocumentMap = {row[0]: row[1] for row in documents}
 
 # Download and load dense index
-DENSE_INDEX_PATH = "./output/dense_index.faiss"
+DENSE_INDEX_PATH = "./dense_index.faiss"
 bucket.blob("index/dense_index.faiss").download_to_filename(DENSE_INDEX_PATH)
 dense_index = faiss.read_index(DENSE_INDEX_PATH)
 
