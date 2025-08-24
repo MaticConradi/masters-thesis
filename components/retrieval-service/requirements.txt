@@ -3,5 +3,5 @@ torch
 google-cloud-storage
 Flask
 gunicorn
-faiss
+faiss-cpu
 openai
