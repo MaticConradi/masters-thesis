@@ -32,6 +32,7 @@ def download_resources():
 		SPARSE_INDEX_PATH = "sparse_index.db"
 		print(f"Downloading {SPARSE_INDEX_PATH}")
 		bucket.blob(f"Index/{SPARSE_INDEX_PATH}").download_to_filename(SPARSE_INDEX_PATH)
+		print(f"Loaded {SPARSE_INDEX_PATH}")
 		conn = sqlite3.connect(f"./{SPARSE_INDEX_PATH}", check_same_thread=False)
 		cursor = conn.cursor()
 
@@ -43,6 +44,7 @@ def download_resources():
 			filepath = f"./{MODEL_NAME}/{blob.name.split('/')[-1]}"
 			print(f"Downloading {filepath}")
 			blob.download_to_filename(filepath)
+			print(f"Loaded {filepath}")
 		tokenizer = AutoTokenizer.from_pretrained(f"./{MODEL_NAME}")
 		model = AutoModelForMaskedLM.from_pretrained(f"./{MODEL_NAME}", device_map="auto")
 		model.eval()
@@ -51,6 +53,7 @@ def download_resources():
 		DENSE_INDEX_PATH = "dense_index.faiss"
 		print(f"Downloading {DENSE_INDEX_PATH}")
 		bucket.blob(f"Index/{DENSE_INDEX_PATH}").download_to_filename(DENSE_INDEX_PATH)
+		print(f"Loaded {DENSE_INDEX_PATH}")
 		denseIndex = faiss.read_index(f"./{DENSE_INDEX_PATH}")
 
 		# Load dense index and create document mapping
@@ -295,4 +298,4 @@ def search_hybrid():
 
 if __name__ == "__main__":
 	port = int(getenv("PORT", 8080))
-	app.run(debug=True, host='0.0.0.0', port=port)
+	app.run(host='0.0.0.0', port=port)
