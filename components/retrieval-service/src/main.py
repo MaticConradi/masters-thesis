@@ -1,8 +1,10 @@
 from os import getenv, mkdir
+import sys
 import sqlite3
 import torch
 import numpy as np
 import faiss
+import threading
 from flask import Flask, jsonify, request
 from transformers import AutoTokenizer, AutoModelForMaskedLM
 from openai import OpenAI
@@ -12,40 +14,71 @@ BUCKET_NAME = getenv("ML_PAPERS_BUCKET_NAME")
 storageClient = storage.Client()
 bucket = storageClient.bucket(BUCKET_NAME)
 
-# Download and load sparse index
-SPARSE_INDEX_PATH = "sparse_index.db"
-print(f"Downloading {SPARSE_INDEX_PATH}")
-bucket.blob(f"Index/{SPARSE_INDEX_PATH}").download_to_filename(SPARSE_INDEX_PATH)
-conn = sqlite3.connect(f"./{SPARSE_INDEX_PATH}", check_same_thread=False)
-cursor = conn.cursor()
+# Global variables for indices and models
+conn = None
+cursor = None
+tokenizer = None
+model = None
+denseIndex = None
+indexDocumentMap = None
+serviceReady = False
+downloadLock = threading.Lock()
 
-# Global model initialization
-MODEL_NAME = "splade-cocondenser-ensembledistil"
-blobs = bucket.list_blobs(prefix=f"Models/{MODEL_NAME}")
-mkdir(f"./{MODEL_NAME}")
-for blob in blobs:
-	filepath = f"./{MODEL_NAME}/{blob.name.split('/')[-1]}"
-	print(f"Downloading {filepath}")
-	blob.download_to_filename(filepath)
-tokenizer = AutoTokenizer.from_pretrained(f"./{MODEL_NAME}")
-model = AutoModelForMaskedLM.from_pretrained(f"./{MODEL_NAME}", device_map="auto")
-model.eval()
+def download_resources():
+	global conn, cursor, tokenizer, model, denseIndex, indexDocumentMap, serviceReady
 
-# Download and load dense index
-DENSE_INDEX_PATH = "dense_index.faiss"
-print(f"Downloading {DENSE_INDEX_PATH}")
-bucket.blob(f"Index/{DENSE_INDEX_PATH}").download_to_filename(DENSE_INDEX_PATH)
-dense_index = faiss.read_index(f"./{DENSE_INDEX_PATH}")
+	try:
+		# Download and load sparse index
+		SPARSE_INDEX_PATH = "sparse_index.db"
+		print(f"Downloading {SPARSE_INDEX_PATH}")
+		bucket.blob(f"Index/{SPARSE_INDEX_PATH}").download_to_filename(SPARSE_INDEX_PATH)
+		conn = sqlite3.connect(f"./{SPARSE_INDEX_PATH}", check_same_thread=False)
+		cursor = conn.cursor()
+
+		# Global model initialization
+		MODEL_NAME = "splade-cocondenser-ensembledistil"
+		blobs = bucket.list_blobs(prefix=f"Models/{MODEL_NAME}")
+		mkdir(f"./{MODEL_NAME}")
+		for blob in blobs:
+			filepath = f"./{MODEL_NAME}/{blob.name.split('/')[-1]}"
+			print(f"Downloading {filepath}")
+			blob.download_to_filename(filepath)
+		tokenizer = AutoTokenizer.from_pretrained(f"./{MODEL_NAME}")
+		model = AutoModelForMaskedLM.from_pretrained(f"./{MODEL_NAME}", device_map="auto")
+		model.eval()
+
+		# Download and load dense index
+		DENSE_INDEX_PATH = "dense_index.faiss"
+		print(f"Downloading {DENSE_INDEX_PATH}")
+		bucket.blob(f"Index/{DENSE_INDEX_PATH}").download_to_filename(DENSE_INDEX_PATH)
+		denseIndex = faiss.read_index(f"./{DENSE_INDEX_PATH}")
+
+		# Load dense index and create document mapping
+		cursor.execute("SELECT id, filename FROM documents")
+		documents = cursor.fetchall()
+		indexDocumentMap = {row[0]: row[1] for row in documents}
+
+		print("All resources downloaded and loaded successfully")
+		serviceReady = True
+
+	except Exception as e:
+		print(f"Error downloading resources: {e}")
+		sys.exit(1)
+
+# Start download in background thread
+downloadThread = threading.Thread(target=download_resources, daemon=True)
+downloadThread.start()
+
+app = Flask(__name__)
 
 # OpenAI client for dense search
 client = OpenAI()
 
-# Load dense index and create document mapping
-cursor.execute("SELECT id, filename FROM documents")
-documents = cursor.fetchall()
-indexDocumentMap = {row[0]: row[1] for row in documents}
-
-app = Flask(__name__)
+def check_service_ready():
+	"""Check if service is ready, return 503 if not"""
+	if not serviceReady:
+		return jsonify({'error': 'Service is starting, please try again later'}), 503
+	return None
 
 def search_index(query, k):
 	tokens = tokenizer(query, return_tensors='pt', padding=False, truncation=False)
@@ -108,7 +141,7 @@ def search_dense_index(query, k):
 	)
 	embedding = np.array(response.data[0].embedding, dtype=np.float32).reshape(1, -1)
 
-	distances, identifiers = dense_index.search(embedding, k * 4)
+	distances, identifiers = denseIndex.search(embedding, k * 4)
 
 	documentIds = []
 	results = []
@@ -144,6 +177,11 @@ def reciprocal_rank_fusion(dense_results, sparse_results, k):
 
 @app.route('/search/sparse', methods=['POST'])
 def search():
+	# Check if service is ready
+	readyCheck = check_service_ready()
+	if readyCheck:
+		return readyCheck
+
 	try:
 		data = request.get_json()
 
@@ -151,7 +189,7 @@ def search():
 			return jsonify({'error': 'Query parameter is required'}), 400
 
 		query = data['query']
-		k = data.get('k', 5)  # Default to top 5 results
+		k = data.get('k', 20)  # Default to top 20 results
 
 		if not query.strip():
 			return jsonify({'error': 'Query cannot be empty'}), 400
@@ -177,6 +215,11 @@ def search():
 
 @app.route('/search/dense', methods=['POST'])
 def search_dense():
+	# Check if service is ready
+	readyCheck = check_service_ready()
+	if readyCheck:
+		return readyCheck
+
 	try:
 		data = request.get_json()
 
@@ -184,7 +227,7 @@ def search_dense():
 			return jsonify({'error': 'Query parameter is required'}), 400
 
 		query = data['query']
-		k = data.get('k', 5)  # Default to top 5 results
+		k = data.get('k', 20)  # Default to top 20 results
 
 		if not query.strip():
 			return jsonify({'error': 'Query cannot be empty'}), 400
@@ -208,6 +251,11 @@ def search_dense():
 
 @app.route('/search/hybrid', methods=['POST'])
 def search_hybrid():
+	# Check if service is ready
+	readyCheck = check_service_ready()
+	if readyCheck:
+		return readyCheck
+
 	try:
 		data = request.get_json()
 
@@ -215,19 +263,18 @@ def search_hybrid():
 			return jsonify({'error': 'Query parameter is required'}), 400
 
 		query = data['query']
-		k = data.get('k', 5)  # Default to top 5 results
+		k = data.get('k', 20)  # Default to top 20 results
 
 		if not query.strip():
 			return jsonify({'error': 'Query cannot be empty'}), 400
 
-		# Get results from both search methods with higher k for better fusion
-		fusion_k = max(k * 4, 50)  # Use larger k for fusion input
+		fusionK = max(k * 4, 50)
 
-		sparse_results = search_index(query, fusion_k)
-		dense_results = search_dense_index(query, fusion_k)
+		sparseResults = search_index(query, fusionK)
+		denseResults = search_dense_index(query, fusionK)
 
 		# Apply reciprocal rank fusion
-		fused_results = reciprocal_rank_fusion(dense_results, sparse_results, k)
+		fusedResults = reciprocal_rank_fusion(denseResults, sparseResults, k)
 
 		response = {
 			'results': [
@@ -235,7 +282,7 @@ def search_hybrid():
 					'document': filename,
 					'rrf_score': float(score)
 				}
-				for filename, score in fused_results
+				for filename, score in fusedResults
 			]
 		}
 
