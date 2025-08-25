@@ -285,7 +285,7 @@ def search_hybrid():
 			'results': [
 				{
 					'document': filename,
-					'rrf_score': float(score)
+					'score': float(score)
 				}
 				for filename, score in fusedResults
 			]
