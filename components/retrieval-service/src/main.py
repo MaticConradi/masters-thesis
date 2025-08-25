@@ -9,10 +9,14 @@ from flask import Flask, jsonify, request
 from transformers import AutoTokenizer, AutoModelForMaskedLM
 from openai import OpenAI
 from google.cloud import storage
+from traceback import print_exc
 
 BUCKET_NAME = getenv("ML_PAPERS_BUCKET_NAME")
 storageClient = storage.Client()
 bucket = storageClient.bucket(BUCKET_NAME)
+
+# OpenAI client for dense search
+client = OpenAI()
 
 # Global variables for indices and models
 conn = None
@@ -22,7 +26,6 @@ model = None
 denseIndex = None
 indexDocumentMap = None
 serviceReady = False
-downloadLock = threading.Lock()
 
 def download_resources():
 	global conn, cursor, tokenizer, model, denseIndex, indexDocumentMap, serviceReady
@@ -73,9 +76,6 @@ downloadThread = threading.Thread(target=download_resources, daemon=True)
 downloadThread.start()
 
 app = Flask(__name__)
-
-# OpenAI client for dense search
-client = OpenAI()
 
 def check_service_ready():
 	"""Check if service is ready, return 503 if not"""
@@ -214,6 +214,7 @@ def search():
 	except ValueError as e:
 		return jsonify({'error': str(e)}), 400
 	except Exception as e:
+		print_exc()
 		return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/search/dense', methods=['POST'])
@@ -250,6 +251,7 @@ def search_dense():
 		return jsonify(response)
 
 	except Exception as e:
+		print_exc()
 		return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/search/hybrid', methods=['POST'])
@@ -294,6 +296,7 @@ def search_hybrid():
 	except ValueError as e:
 		return jsonify({'error': str(e)}), 400
 	except Exception as e:
+		print_exc()
 		return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == "__main__":
