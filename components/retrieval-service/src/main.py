@@ -21,7 +21,7 @@ cursor = conn.cursor()
 # Global model initialization
 MODEL_NAME = "splade-cocondenser-ensembledistil"
 blobs = bucket.list_blobs(prefix=f"Models/{MODEL_NAME}")
-mkdir(f"./{MODEL_NAME}", exist_ok=True)
+mkdir(f"./{MODEL_NAME}")
 for blob in blobs:
     blob.download_to_filename(f"./{MODEL_NAME}/{blob.name.split('/')[-1]}")
 tokenizer = AutoTokenizer.from_pretrained(f"./{MODEL_NAME}")
