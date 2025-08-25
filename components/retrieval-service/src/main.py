@@ -1,4 +1,4 @@
-from os import getenv
+from os import getenv, mkdir
 import sqlite3
 import torch
 import numpy as np
@@ -21,8 +21,9 @@ cursor = conn.cursor()
 # Global model initialization
 MODEL_NAME = "splade-cocondenser-ensembledistil"
 blobs = bucket.list_blobs(prefix=f"Models/{MODEL_NAME}")
+mkdir(f"./{MODEL_NAME}", exist_ok=True)
 for blob in blobs:
-    blob.download_to_filename(f"./{MODEL_NAME}/{blob.name}")
+    blob.download_to_filename(f"./{MODEL_NAME}/{blob.name.split('/')[-1]}")
 tokenizer = AutoTokenizer.from_pretrained(f"./{MODEL_NAME}")
 model = AutoModelForMaskedLM.from_pretrained(f"./{MODEL_NAME}", device_map="auto")
 model.eval()
