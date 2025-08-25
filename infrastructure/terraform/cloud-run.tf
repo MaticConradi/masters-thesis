@@ -210,7 +210,7 @@ resource "google_cloud_run_v2_service" "retrieval_service" {
 
   template {
     service_account = google_service_account.cloud_run_sa.email
-    timeout         = "60s"
+    timeout         = "180s"
 
     scaling {
       max_instance_count = 1
