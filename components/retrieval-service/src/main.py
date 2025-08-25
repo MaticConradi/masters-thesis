@@ -26,7 +26,7 @@ mkdir(f"./{MODEL_NAME}")
 for blob in blobs:
 	filepath = f"./{MODEL_NAME}/{blob.name.split('/')[-1]}"
 	print(f"Downloading {filepath}")
-    blob.download_to_filename(filepath)
+	blob.download_to_filename(filepath)
 tokenizer = AutoTokenizer.from_pretrained(f"./{MODEL_NAME}")
 model = AutoModelForMaskedLM.from_pretrained(f"./{MODEL_NAME}", device_map="auto")
 model.eval()
