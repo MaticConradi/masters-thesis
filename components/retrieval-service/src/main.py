@@ -14,6 +14,7 @@ bucket = storageClient.bucket(BUCKET_NAME)
 
 # Download and load sparse index
 SPARSE_INDEX_PATH = "sparse_index.db"
+print(f"Downloading {SPARSE_INDEX_PATH}")
 bucket.blob(f"Index/{SPARSE_INDEX_PATH}").download_to_filename(SPARSE_INDEX_PATH)
 conn = sqlite3.connect(f"./{SPARSE_INDEX_PATH}", check_same_thread=False)
 cursor = conn.cursor()
@@ -23,10 +24,18 @@ MODEL_NAME = "splade-cocondenser-ensembledistil"
 blobs = bucket.list_blobs(prefix=f"Models/{MODEL_NAME}")
 mkdir(f"./{MODEL_NAME}")
 for blob in blobs:
-    blob.download_to_filename(f"./{MODEL_NAME}/{blob.name.split('/')[-1]}")
+	filepath = f"./{MODEL_NAME}/{blob.name.split('/')[-1]}"
+	print(f"Downloading {filepath}")
+    blob.download_to_filename(filepath)
 tokenizer = AutoTokenizer.from_pretrained(f"./{MODEL_NAME}")
 model = AutoModelForMaskedLM.from_pretrained(f"./{MODEL_NAME}", device_map="auto")
 model.eval()
+
+# Download and load dense index
+DENSE_INDEX_PATH = "dense_index.faiss"
+print(f"Downloading {DENSE_INDEX_PATH}")
+bucket.blob(f"Index/{DENSE_INDEX_PATH}").download_to_filename(DENSE_INDEX_PATH)
+dense_index = faiss.read_index(f"./{DENSE_INDEX_PATH}")
 
 # OpenAI client for dense search
 client = OpenAI()
@@ -35,11 +44,6 @@ client = OpenAI()
 cursor.execute("SELECT id, filename FROM documents")
 documents = cursor.fetchall()
 indexDocumentMap = {row[0]: row[1] for row in documents}
-
-# Download and load dense index
-DENSE_INDEX_PATH = "dense_index.faiss"
-bucket.blob(f"Index/{DENSE_INDEX_PATH}").download_to_filename(DENSE_INDEX_PATH)
-dense_index = faiss.read_index(f"./{DENSE_INDEX_PATH}")
 
 app = Flask(__name__)
 
@@ -241,8 +245,6 @@ def search_hybrid():
 		return jsonify({'error': str(e)}), 400
 	except Exception as e:
 		return jsonify({'error': 'Internal server error'}), 500
-
-CHUNK_SIZE = 8
 
 if __name__ == "__main__":
 	port = int(getenv("PORT", 8080))
