@@ -67,12 +67,12 @@ resource "google_cloud_run_v2_job" "markdown_processor" {
       containers {
         image = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.markdown_processor.repository_id}/production:latest"
 
-		resources {
-		  limits = {
-			memory = "4Gi"
-			cpu    = "1"
-		  }
-		}
+        resources {
+          limits = {
+            memory = "4Gi"
+            cpu    = "1"
+          }
+        }
 
         env {
           name = "GEMINI_API_KEY"
@@ -209,8 +209,8 @@ resource "google_cloud_run_v2_service" "retrieval_service" {
   deletion_protection = false
 
   template {
-    service_account                  = google_service_account.cloud_run_sa.email
-    timeout                          = "60s"
+    service_account = google_service_account.cloud_run_sa.email
+    timeout         = "60s"
 
     scaling {
       max_instance_count = 1
@@ -232,10 +232,15 @@ resource "google_cloud_run_v2_service" "retrieval_service" {
         value = google_storage_bucket.ml_papers.name
       }
 
-	  env {
-		name  = "OPENAI_API_KEY"
-		value = google_secret_manager_secret.openai_api_key.secret_id
-	  }
+      env {
+        name = "OPENAI_API_KEY"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.openai_api_key.secret_id
+            version = "latest"
+          }
+        }
+      }
     }
   }
 }

@@ -152,7 +152,7 @@ def search_dense_index(query, k):
 		document = indexDocumentMap[identifiers[0, i]]
 		if document not in documentIds:
 			documentIds.append(document)
-			results.append((document, float(distances[0, i])))
+			results.append((document, float(1 / (distances[0, i] + 0.00000001))))
 
 	return results[:k]
 
@@ -242,9 +242,9 @@ def search_dense():
 			'results': [
 				{
 					'document': filename,
-					'distance': float(distance)
+					'score': float(score)
 				}
-				for filename, distance in results
+				for filename, score in results
 			]
 		}
 
