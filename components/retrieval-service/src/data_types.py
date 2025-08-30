@@ -1,3 +1,7 @@
+from pydantic import BaseModel
+from typing import Optional
+from enum import Enum
+
 class Task(str, Enum):
 	newproductsalesforecasting = "new product sales forecasting"
 	weaklysupervisedclassification = "weakly supervised classification"
