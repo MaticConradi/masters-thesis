@@ -1,6 +1,8 @@
 from os import getenv, mkdir
 import sys
 import sqlite3
+from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor
 import torch
 import numpy as np
 import faiss
@@ -10,6 +12,7 @@ from transformers import AutoTokenizer, AutoModelForMaskedLM
 from openai import OpenAI
 from google.cloud import storage
 from traceback import print_exc
+from data_types import Results
 
 BUCKET_NAME = getenv("ML_PAPERS_BUCKET_NAME")
 storageClient = storage.Client()
@@ -82,6 +85,70 @@ def check_service_ready():
 	if not serviceReady:
 		return jsonify({'error': 'Service is starting, please try again later'}), 503
 	return None
+
+def get_url_for(filename):
+	blob = bucket.blob(f"{filename}.pdf")
+	expires_at = datetime.utcnow() + timedelta(hours=1)
+	return blob.generate_signed_url(expiration=expires_at)
+
+def download_processed_mmd_file(filename):
+	blob = bucket.blob(f"{filename}-corrected.mmd")
+	md = blob.download_as_bytes().decode("utf-8")
+	return md
+
+def extract_results(sample):
+	try:
+		response = client.responses.parse(
+			model="gpt-5-mini",
+			reasoning={"effort": "minimal"},
+			text={"verbosity": "low"},
+			input=[
+				{
+					"role": "system",
+					"content": "You are an expert at structured data extraction. You will be given unstructured text from a research paper and should extract the paper's results into the given structure. Extract an array of results mentioned in the text (one or many). Each result's struct fields should contain minimal information and strictly adhere to the type."
+				},
+				{
+					"role": "user",
+					"content": sample
+				}
+			],
+			text_format=Results
+		)
+		output = response.output_parsed.results
+	except Exception as e:
+		print(e)
+		sleep(5)
+		return extract_results(inputs)
+
+	if len(output) == 0:
+		return None
+
+	results = []
+	for result in output:
+		results.append({
+			"task": result.task,
+			"model_name": result.model_name,
+			"model_architecture": result.model_architecture,
+			"parameter_count": result.parameter_count,
+			"metric": result.metric,
+			"metric_higher_is_better": result.metric_higher_is_better,
+			"value": result.value,
+			"value_error": result.value_error,
+			"dataset": result.dataset,
+			"dataset_version": result.dataset_version,
+			"dataset_split": result.dataset_split,
+			"inference_time": result.inference_time,
+			"inference_time_unit": result.inference_time_unit,
+			"inference_device_class": result.inference_device_class
+		})
+
+	return results
+
+def extract_results(filenames):
+	with ThreadPoolExecutor() as executor:
+		texts = list(executor.map(download_processed_mmd_file, filenames))
+		results = list(executor.map(extract_results, texts))
+		return results
 
 def search_index(query, k):
 	tokens = tokenizer(query, return_tensors='pt', padding=False, truncation=False)
@@ -197,15 +264,18 @@ def search():
 		if not query.strip():
 			return jsonify({'error': 'Query cannot be empty'}), 400
 
-		results = search_index(query, k)
+		searchResults = search_index(query, k)
+		extractedData = extract_results([r[0] for r in searchResults])
 
 		response = {
 			'results': [
 				{
-					'document': filename,
-					'score': float(score)
+					'document_id': filename,
+					'score': float(score),
+					'document_url': get_url_for(filename),
+					'extracted_data': results
 				}
-				for filename, score in results
+				for (filename, score), results in zip(searchResults, extractedData)
 			]
 		}
 
@@ -236,15 +306,18 @@ def search_dense():
 		if not query.strip():
 			return jsonify({'error': 'Query cannot be empty'}), 400
 
-		results = search_dense_index(query, k)
+		searchResults = search_dense_index(query, k)
+		extractedData = extract_results([r[0] for r in searchResults])
 
 		response = {
 			'results': [
 				{
-					'document': filename,
-					'score': float(score)
+					'document_id': filename,
+					'document_url': get_url_for(filename),
+					'score': float(score),
+					'extracted_data': results
 				}
-				for filename, score in results
+				for (filename, score), results in zip(searchResults, extractedData)
 			]
 		}
 
@@ -278,16 +351,18 @@ def search_hybrid():
 		sparseResults = search_index(query, fusionK)
 		denseResults = search_dense_index(query, fusionK)
 
-		# Apply reciprocal rank fusion
-		fusedResults = reciprocal_rank_fusion(denseResults, sparseResults, k)
+		searchResults = reciprocal_rank_fusion(denseResults, sparseResults, k)
+		extractedData = extract_results([r[0] for r in searchResults])
 
 		response = {
 			'results': [
 				{
-					'document': filename,
-					'score': float(score)
+					'document_id': filename,
+					'score': float(score),
+					'document_url': get_url_for(filename),
+					'extracted_data': results
 				}
-				for filename, score in fusedResults
+				for (filename, score), results in zip(searchResults, extractedData)
 			]
 		}
 
