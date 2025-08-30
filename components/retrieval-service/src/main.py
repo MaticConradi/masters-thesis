@@ -96,7 +96,7 @@ def download_processed_mmd_file(filename):
 	md = blob.download_as_bytes().decode("utf-8")
 	return md
 
-def extract_results(sample):
+def extract_results_from(sample):
 	try:
 		response = client.responses.parse(
 			model="gpt-5-mini",
@@ -118,7 +118,7 @@ def extract_results(sample):
 	except Exception as e:
 		print(e)
 		sleep(5)
-		return extract_results(inputs)
+		return extract_results_from(inputs)
 
 	if len(output) == 0:
 		return None
@@ -147,7 +147,7 @@ def extract_results(sample):
 def extract_results(filenames):
 	with ThreadPoolExecutor() as executor:
 		texts = list(executor.map(download_processed_mmd_file, filenames))
-		results = list(executor.map(extract_results, texts))
+		results = list(executor.map(extract_results_from, texts))
 		return results
 
 def search_index(query, k):
