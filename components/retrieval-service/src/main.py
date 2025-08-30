@@ -89,7 +89,7 @@ def check_service_ready():
 def get_url_for(filename):
 	blob = bucket.blob(f"{filename}.pdf")
 	expires_at = datetime.utcnow() + timedelta(hours=1)
-	return blob.generate_signed_url(expiration=expires_at)
+	return blob.generate_signed_url(version="v2", expiration=expires_at)
 
 def download_processed_mmd_file(filename):
 	blob = bucket.blob(f"{filename}-corrected.mmd")
