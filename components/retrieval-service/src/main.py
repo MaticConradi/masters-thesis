@@ -272,7 +272,7 @@ def search():
 				{
 					'document_id': filename,
 					'score': float(score),
-					'document_url': get_url_for(filename),
+					# 'document_url': get_url_for(filename),
 					'extracted_data': results
 				}
 				for (filename, score), results in zip(searchResults, extractedData)
@@ -313,7 +313,7 @@ def search_dense():
 			'results': [
 				{
 					'document_id': filename,
-					'document_url': get_url_for(filename),
+					# 'document_url': get_url_for(filename),
 					'score': float(score),
 					'extracted_data': results
 				}
@@ -359,7 +359,7 @@ def search_hybrid():
 				{
 					'document_id': filename,
 					'score': float(score),
-					'document_url': get_url_for(filename),
+					# 'document_url': get_url_for(filename),
 					'extracted_data': results
 				}
 				for (filename, score), results in zip(searchResults, extractedData)
