@@ -382,10 +382,10 @@ def extract():
 		if not data or 'document_id' not in data:
 			return jsonify({'error': 'Document ID is required'}), 400
 
-		document_id = data['document_id']
-		extracted_data = extract_document_data(document_id)
+		filename = data['document_id']
+		results = extract_results([filename])
 
-		return jsonify({'extracted_data': extracted_data})
+		return jsonify({'extracted_data': results})
 
 	except Exception as e:
 		print_exc()
