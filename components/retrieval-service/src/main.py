@@ -374,6 +374,23 @@ def search_hybrid():
 		print_exc()
 		return jsonify({'error': 'Internal server error'}), 500
 
+@app.route('/extract', methods=['POST'])
+def extract():
+	try:
+		data = request.get_json()
+
+		if not data or 'document_id' not in data:
+			return jsonify({'error': 'Document ID is required'}), 400
+
+		document_id = data['document_id']
+		extracted_data = extract_document_data(document_id)
+
+		return jsonify({'extracted_data': extracted_data})
+
+	except Exception as e:
+		print_exc()
+		return jsonify({'error': 'Internal server error'}), 500
+
 if __name__ == "__main__":
 	port = int(getenv("PORT", 8080))
 	app.run(host='0.0.0.0', port=port)
