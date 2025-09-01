@@ -128,7 +128,6 @@ def extract_results_from(sample, model="gpt-5-mini"):
 				},
 			)
 			output = response.parsed
-	return response.parsed
 	except Exception as e:
 		print(e)
 		sleep(5)
