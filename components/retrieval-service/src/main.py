@@ -99,7 +99,10 @@ def download_processed_mmd_file(filename):
 	md = blob.download_as_bytes().decode("utf-8")
 	return md
 
-def extract_results_from(inputs):
+def extract_results_from(inputs, retries=5):
+	if retries == 0:
+		return None
+
 	sample, model = inputs
 	try:
 		if model in ["gpt-5", "gpt-5-mini", "gpt-5-nano"]:
@@ -133,7 +136,7 @@ def extract_results_from(inputs):
 	except Exception as e:
 		print(e)
 		sleep(5)
-		return extract_results_from(inputs)
+		return extract_results_from(inputs, retries=retries - 1)
 
 	if len(output) == 0:
 		return None
