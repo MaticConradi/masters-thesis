@@ -6,3 +6,4 @@ Flask
 gunicorn
 faiss-cpu
 openai
+google-genai

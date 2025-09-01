@@ -10,6 +10,7 @@ import threading
 from flask import Flask, jsonify, request
 from transformers import AutoTokenizer, AutoModelForMaskedLM
 from openai import OpenAI
+from google import genai
 from google.cloud import storage
 from traceback import print_exc
 from data_types import Results
@@ -18,8 +19,9 @@ BUCKET_NAME = getenv("ML_PAPERS_BUCKET_NAME")
 storageClient = storage.Client()
 bucket = storageClient.bucket(BUCKET_NAME)
 
-# OpenAI client for dense search
-client = OpenAI()
+# LLM clients
+openaiClient = OpenAI()
+genaiClient = genai.Client()
 
 # Global variables for indices and models
 conn = None
@@ -96,25 +98,37 @@ def download_processed_mmd_file(filename):
 	md = blob.download_as_bytes().decode("utf-8")
 	return md
 
-def extract_results_from(sample):
+def extract_results_from(sample, model="gpt-5-mini"):
 	try:
-		response = client.responses.parse(
-			model="gpt-5-mini",
-			reasoning={"effort": "minimal"},
-			text={"verbosity": "low"},
-			input=[
-				{
-					"role": "system",
-					"content": "You are an expert at structured data extraction. You will be given unstructured text from a research paper and should extract the paper's results into the given structure. Extract an array of results mentioned in the text (one or many). Each result's struct fields should contain minimal information and strictly adhere to the type."
+		if model in ["gpt-5", "gpt-5-mini", "gpt-5-nano"]:
+			response = openaiClient.responses.parse(
+				model=model,
+				reasoning={"effort": "minimal"},
+				text={"verbosity": "low"},
+				input=[
+					{
+						"role": "system",
+						"content": "You are an expert at structured data extraction. You will be given unstructured text from a research paper and should extract the paper's results into the given structure. Extract an array of results achieved by the authors of the paper that are mentioned in the text (one or many). Do not include supplementary results at different, less optimal parameters. Each result's struct fields should contain minimal information and strictly adhere to the type."
+					},
+					{
+						"role": "user",
+						"content": sample
+					}
+				],
+				text_format=Results
+			)
+			output = response.output_parsed.results
+		elif model in ["gemini-2.5-pro", "gemini-2.5-flash"]:
+			response = gaminiClient.models.generate_content(
+				model="gemini-2.5-pro",
+				contents=f"You are an expert at structured data extraction. You will be given unstructured text from a research paper and should extract the paper's results into the given structure. Extract an array of results achieved by the authors of the paper that are mentioned in the text (one or many). Do not include supplementary results at different, less optimal parameters. Each result's struct fields should contain minimal information and strictly adhere to the type.\n\nPaper: ```{sample}```",
+				config={
+					"response_mime_type": "application/json",
+					"response_schema": Results,
 				},
-				{
-					"role": "user",
-					"content": sample
-				}
-			],
-			text_format=Results
-		)
-		output = response.output_parsed.results
+			)
+			output = response.parsed
+	return response.parsed
 	except Exception as e:
 		print(e)
 		sleep(5)
@@ -205,7 +219,7 @@ def search_index(query, k):
 	return cursor.fetchall()
 
 def search_dense_index(query, k):
-	response = client.embeddings.create(
+	response = openaiClient.embeddings.create(
 		input=query,
 		model="text-embedding-3-large"
 	)
@@ -383,7 +397,8 @@ def extract():
 			return jsonify({'error': 'Document ID is required'}), 400
 
 		filename = data['document_id']
-		results = extract_results([filename])
+		model = data.get('model', 'gpt-5-mini')
+		results = extract_results([filename], model=model)
 
 		return jsonify({'extracted_data': results})
 

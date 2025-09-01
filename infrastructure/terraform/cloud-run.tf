@@ -228,10 +228,14 @@ resource "google_cloud_run_v2_service" "retrieval_service" {
       }
 
       env {
-        name  = "ML_PAPERS_BUCKET_NAME"
-        value = google_storage_bucket.ml_papers.name
+        name = "GEMINI_API_KEY"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.gemini_api_key.secret_id
+            version = "latest"
+          }
+        }
       }
-
       env {
         name = "OPENAI_API_KEY"
         value_source {
@@ -240,6 +244,10 @@ resource "google_cloud_run_v2_service" "retrieval_service" {
             version = "latest"
           }
         }
+      }
+      env {
+        name  = "ML_PAPERS_BUCKET_NAME"
+        value = google_storage_bucket.ml_papers.name
       }
     }
   }
