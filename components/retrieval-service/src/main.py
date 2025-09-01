@@ -98,7 +98,8 @@ def download_processed_mmd_file(filename):
 	md = blob.download_as_bytes().decode("utf-8")
 	return md
 
-def extract_results_from(sample, model="gpt-5-mini"):
+def extract_results_from(inputs):
+	sample, model = inputs
 	try:
 		if model in ["gpt-5", "gpt-5-mini", "gpt-5-nano"]:
 			response = openaiClient.responses.parse(
@@ -157,10 +158,10 @@ def extract_results_from(sample, model="gpt-5-mini"):
 
 	return results
 
-def extract_results(filenames):
+def extract_results(filenames, model="gpt-5-mini"):
 	with ThreadPoolExecutor() as executor:
 		texts = list(executor.map(download_processed_mmd_file, filenames))
-		results = list(executor.map(extract_results_from, texts))
+		results = list(executor.map(extract_results_from, [(text, model) for text in texts]))
 		return results
 
 def search_index(query, k):
