@@ -125,7 +125,7 @@ def extract_results_from(inputs, retries=5):
 			output = response.output_parsed.results
 		elif model in ["gemini-2.5-pro", "gemini-2.5-flash"]:
 			response = geminiClient.models.generate_content(
-				model="gemini-2.5-pro",
+				model=model,
 				contents=f"You are an expert at structured data extraction. You will be given unstructured text from a research paper and should extract the paper's results into the given structure. Extract an array of results achieved by the authors of the paper that are mentioned in the text (one or many). Do not include supplementary results at different, less optimal parameters. Each result's struct fields should contain minimal information and strictly adhere to the type.\n\nPaper: ```{sample}```",
 				config={
 					"response_mime_type": "application/json",
